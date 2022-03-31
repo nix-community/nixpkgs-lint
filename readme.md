@@ -53,7 +53,7 @@ In any case, suppose we wanted to find usages of `pkg-config` in
 
 We use a variation of this query in JavaScript to not restrict
 ourselves to when the right-hand side of the binding is not a
-`list_expression` (which occurs frequently).  The JavaScript we right
+`list_expression` (which occurs frequently).  The JavaScript we write
 is
 
 ```javascript
