@@ -18,12 +18,6 @@ const nixpkgsPath = join(args[0],'pkgs');
 const parser = new Parser();
 parser.setLanguage(Nix);
 
-// Query for pkg-config in buildInputs
-const pkgQuery = new Query(
-  Nix,
-    `((binding attrpath: _ @a expression: _ @l) (#eq? @a "buildInputs")) @b`
-);
-
 // Given a raw list of captures, extract the row, column and text.
 function formatCaptures(tree, captures) {
   return captures.map((c) => {
@@ -59,10 +53,39 @@ function recurseDir(Directory) {
 
 recurseDir(nixpkgsPath);
 
+// Query for pkg-config in buildInputs
+const pkgQuery = new Query(
+  Nix,
+    `((binding attrpath: _ @a expression: _ @l) (#eq? @a "buildInputs")) @b`
+);
+
+const stdenvQuery = new Query(
+  Nix,
+`
+((apply_expression
+    function: _ @b
+    argument: (attrset_expression
+                 (binding_set binding:
+                    (binding attrpath: _ @a expression: _ @e))))
+ (#match? @b "stdenv\.mkDerivation")
+ (#match? @a "dontBuild")
+ (#match? @e "true")) @stdenvDontBuild
+`
+);
+
 // Lint each file in Nixpkgs
+// files.forEach(file => {
+//     const tree = parser.parse(readFileSync(file, "utf8"));
+//     let l = capturesByName(tree, pkgQuery, "l").filter((x) => x.text.includes('pkg-config'));
+//     if (l.length > 0) {
+//         console.log(file);
+//         console.log(l);
+//     }
+// });
+
 files.forEach(file => {
     const tree = parser.parse(readFileSync(file, "utf8"));
-    let l = capturesByName(tree, pkgQuery, "l").filter((x) => x.text.includes('pkg-config'));
+    let l = capturesByName(tree, stdenvQuery, "stdenvDontBuild");
     if (l.length > 0) {
         console.log(file);
         console.log(l);

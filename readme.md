@@ -3,7 +3,8 @@ This is a simple linter for Nix that uses
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/).  I plan on
 extending it with more detections in the future.  Currently we have:
 
-- detects usage of `pkg-config` in `buildInputs`
+- [x] usage of `pkg-config` in `buildInputs`
+- [x] using `dontBuild = true;` in calls to `stdenv.mkDerivation`
 
 ## Usage
 ```ShellSession
