@@ -18,7 +18,7 @@ const nixpkgsPath = join(args[0],'pkgs');
 const parser = new Parser();
 parser.setLanguage(Nix);
 
-// Query for redundant assignments
+// Query for pkg-config in buildInputs
 const pkgQuery = new Query(
   Nix,
     `((binding attrpath: _ @a expression: _ @l) (#eq? @a "buildInputs")) @b`
