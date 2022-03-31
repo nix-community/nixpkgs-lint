@@ -76,22 +76,6 @@ $ npm run lint ~/Git/forks/nixpkgs
 > formula-lint@1.0.0 lint
 > node index.js "/Users/siraben/Git/forks/nixpkgs"
 
-/Users/siraben/Git/forks/nixpkgs/pkgs/applications/accessibility/dasher/default.nix
-[
-  {
-    text: '[\n' +
-      '    glib\n' +
-      '    gtk3\n' +
-      '    expat\n' +
-      '    itstool\n' +
-      '    # at-spi2 needs dbus to be recognized by pkg-config\n' +
-      '    at-spi2-core\n' +
-      '    dbus\n' +
-      '  ] ++ lib.optional speechSupport speechd',
-    row: 50,
-    column: 16
-  }
-]
 /Users/siraben/Git/forks/nixpkgs/pkgs/applications/audio/aumix/default.nix
 [
   {
