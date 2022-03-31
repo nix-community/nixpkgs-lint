@@ -64,9 +64,13 @@ const stdenvQuery = new Query(
 `
 ((apply_expression
     function: _ @b
-    argument: (attrset_expression
+    argument: [(rec_attrset_expression
                  (binding_set binding:
-                    (binding attrpath: _ @a expression: _ @e))))
+                    (binding attrpath: _ @a expression: _ @e)))
+               (attrset_expression
+                 (binding_set binding:
+                    (binding attrpath: _ @a expression: _ @e)))
+               ])
  (#match? @b "stdenv\.mkDerivation")
  (#match? @a "dontBuild")
  (#match? @e "true")) @stdenvDontBuild
