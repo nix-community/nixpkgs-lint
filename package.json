@@ -1,0 +1,16 @@
+{
+  "name": "nix-lint",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Linter for Nix",
+  "main": "index.js",
+  "scripts": {
+    "lint": "node index.js"
+  },
+  "author": "Ben Siraphob",
+  "license": "MIT",
+  "devDependencies": {
+    "tree-sitter": "^0.20.0",
+    "tree-sitter-nix": "github:cstrahan/tree-sitter-nix"
+  }
+}
