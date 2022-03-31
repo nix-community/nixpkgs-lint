@@ -15,7 +15,7 @@ Why another linter?  My motivation for this was spawned after doing a
 series of treewide PRs such as [moving cmake to
 buildInputs](https://github.com/NixOS/nixpkgs/pull/108022).  The
 strategy was similar each time; write some shell one-liner to go
-through every file in Nixpkgs and find some anti-pattern to fix.
+through every file (27,000+ of them) in Nixpkgs and find some anti-pattern to fix.
 However, this is quickly problematic for multiple reasons:
 
 - it is hard to account for multi-line expressions
