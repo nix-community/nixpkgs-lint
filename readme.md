@@ -1,4 +1,4 @@
-# Linter for Nix using tree-sitter
+# Linter for Nix using tree-sitter 🌳 + ❄️
 
 [![asciicast](https://asciinema.org/a/483158.svg)](https://asciinema.org/a/483158)
 
