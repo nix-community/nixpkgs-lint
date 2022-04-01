@@ -12,5 +12,8 @@
   "devDependencies": {
     "tree-sitter": "^0.20.0",
     "tree-sitter-nix": "github:cstrahan/tree-sitter-nix"
+  },
+  "dependencies": {
+    "enquirer": "^2.3.6"
   }
 }
