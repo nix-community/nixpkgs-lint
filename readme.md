@@ -1,4 +1,7 @@
 # Linter for Nix using tree-sitter
+
+[![asciicast](https://asciinema.org/a/483158.svg)](https://asciinema.org/a/483158)
+
 This is a simple linter for Nix that uses
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/).  I plan on
 extending it with more detections in the future.  Currently we have:
