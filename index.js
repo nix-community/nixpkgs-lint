@@ -105,6 +105,10 @@ const prompt = new Select({
      @q
     `,
     },
+    {
+      message: "pytestCheckHook in checkInputs",
+      name: `((binding attrpath: _ @a expression: _ @l) (#eq? @a "checkInputs") (#match? @l "pytestCheckHook")) @q`,
+    },
   ],
   result: (x) => new Query(Nix, x),
 });
