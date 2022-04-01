@@ -6,8 +6,10 @@ This is a simple linter for Nix that uses
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/).  I plan on
 extending it with more detections in the future.  Currently we have:
 
-- [x] usage of `pkg-config` in `buildInputs`
-- [x] using `dontBuild = true;` in calls to `stdenv.mkDerivation`
+- [x] `pkg-config` in `buildInputs`
+- [x] `dontBuild = true` in `stdenv.mkDerivation`
+- [x] redundant packages from `stdenv` in `nativeBuildInputs`
+- [x] `pytestCheckHook` in `checkInputs`
 
 ## Usage
 ```ShellSession
