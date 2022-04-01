@@ -70,6 +70,7 @@ async function run(query) {
       // console.log(l);
     }
   }
+  process.exit(0);
 }
 
 const prompt = new Select({
