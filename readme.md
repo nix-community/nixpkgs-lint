@@ -38,7 +38,7 @@ subjective reasons myself:
 - need to locate this information back to a source location
 
 Often one or more of these would be pretty involved.  Furthermore, it
-locks you into a specific parser (which may or may not have provide
+locks you into a specific parser (which may or may not have provided
 source information, parse all things correctly, etc.).
 
 Enter tree-sitter.  The [Nix grammar for
