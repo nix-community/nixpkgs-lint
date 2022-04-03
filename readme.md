@@ -12,6 +12,7 @@ we have the following detections:
 - [x] `pytestCheckHook` in `checkInputs`
 
 ## Features
+- **Fast**: lints all of Nixpkgs in around 30 seconds
 - **Semantic linting**: forget about hacking up regexes, we run
   queries directly on parse trees created by tree-sitter
 - **Syntax-aware**: `nix-lint` can easily handle multi-line
@@ -23,8 +24,7 @@ we have the following detections:
 
 ## Usage
 By default the tool will recurse through every `.nix` file in the
-provided path.  Passing the `pkgs` subdirectory of Nixpkgs is
-recommended.
+provided path.
 ```ShellSession
 $ npm run lint <path to folder>
 ```
