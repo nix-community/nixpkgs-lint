@@ -119,6 +119,9 @@ function queryThenWalk(tree, queryPred) {
 
 const matchIdent = (t) => (x) => x.nodeType == "identifier" && x.nodeText == t;
 
+const matchIdentRegex = (t) => (x) =>
+  x.nodeType == "identifier" && x.nodeText.match(t);
+
 async function run_new(queryPred) {
   process.stdin.resume();
   const parser = new Parser();
@@ -201,16 +204,23 @@ const prompt = new Select({
     },
     {
       message: "redundant packages from stdenv in nativeBuildInputs",
-      value: `
+      value: mkQueryPred(
+        `
     ((binding attrpath: _ @a expression: _ @i)
     (#eq? @a "nativeBuildInputs")
     (#match? @i "coreutils|findutils|diffutils|gnused|gnugrep|gawk|gnutar|gzip|bzip2\.bin|gnumake|bash|patch|xz\.bin"))
-     @q
-    `,
+     @q`,
+        matchIdentRegex(
+          /^(coreutils|findutils|diffutils|gnused|gnugrep|gawk|gnutar|gzip|bzip2\.bin|gnumake|bash|patch|xz\.bin)$/
+        )
+      ),
     },
     {
       message: "pytestCheckHook in checkInputs",
-      value: `((binding attrpath: _ @a expression: _ @l) (#eq? @a "checkInputs") (#match? @l "pytestCheckHook")) @q`,
+      value: mkQueryPred(
+        `((binding attrpath: _ @a expression: _ @l) (#eq? @a "checkInputs") (#match? @l "pytestCheckHook")) @q`,
+        matchIdent("pytestCheckHook")
+      ),
     },
   ],
   result: (x) => ({ q: x, b: x instanceof Object }),
