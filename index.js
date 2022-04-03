@@ -44,10 +44,11 @@ function capturesByName(tree, query, name) {
   });
 }
 
-// Get all the .nix files in pkgs/ and traverse the tree
+// Ignoring hidden files, get all the .nix files and traverse the tree
 let files = [];
 function recurseDir(Directory) {
   readdirSync(Directory).forEach((File) => {
+    if ((/(^|\/)\.[^\/\.]/g).test(File)) return;
     const Absolute = join(Directory, File);
     if (statSync(Absolute).isDirectory()) return recurseDir(Absolute);
     else return files.push(Absolute);
@@ -127,7 +128,7 @@ async function run_new(queryPred) {
   const parser = new Parser();
   parser.setLanguage(Nix);
   recurseDir(nixpkgsPath);
-  Promise.all(
+  Promise.allSettled(
     files.map(async (file) => {
       const tree = parser.parse(readFileSync(file, "utf8"));
       let l = queryThenWalk(tree, queryPred);
@@ -152,7 +153,7 @@ async function run_old(query) {
   const parser = new Parser();
   parser.setLanguage(Nix);
   recurseDir(nixpkgsPath);
-  Promise.all(
+  Promise.allSettled(
     files.map(async (file) => {
       const tree = parser.parse(readFileSync(file, "utf8"));
       let l = capturesByName(tree, query, "q");
