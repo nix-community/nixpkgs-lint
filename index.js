@@ -127,22 +127,23 @@ async function run_new(queryPred) {
   const parser = new Parser();
   parser.setLanguage(Nix);
   recurseDir(nixpkgsPath);
-  for (const file of files) {
-    const tree = parser.parse(readFileSync(file, "utf8"));
-    // let l = capturesByName(tree, query, "q");
-    await pause();
-    let l = queryThenWalk(tree, queryPred);
-
-    if (l.length > 0) {
-      for (const m of l) {
-        console.log(
-          `${file}:${m.start.row + 1} (${m.start.row + 1},${
-            m.start.column + 1
-          })-(${m.end.row + 1},${m.end.column + 1})`
+  Promise.all(
+    files.map(async (file) => {
+      const tree = parser.parse(readFileSync(file, "utf8"));
+      let l = queryThenWalk(tree, queryPred);
+      if (l.length > 0) {
+        Promise.all(
+          l.map((m) => {
+            console.log(
+              `${file}:${m.start.row + 1} (${m.start.row + 1},${
+                m.start.column + 1
+              })-(${m.end.row + 1},${m.end.column + 1})`
+            );
+          })
         );
       }
-    }
-  }
+    })
+  );
   process.exit(0);
 }
 
@@ -151,15 +152,15 @@ async function run_old(query) {
   const parser = new Parser();
   parser.setLanguage(Nix);
   recurseDir(nixpkgsPath);
-  for (const file of files) {
-    const tree = parser.parse(readFileSync(file, "utf8"));
-    let l = capturesByName(tree, query, "q");
-    await pause();
-    if (l.length > 0) {
-      console.log(file + ":" + (l[0].row + 1));
-      // console.log(l);
-    }
-  }
+  Promise.all(
+    files.map(async (file) => {
+      const tree = parser.parse(readFileSync(file, "utf8"));
+      let l = capturesByName(tree, query, "q");
+      if (l.length > 0) {
+        console.log(file + ":" + (l[0].row + 1));
+      }
+    })
+  );
   process.exit(0);
 }
 
