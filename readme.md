@@ -1,19 +1,32 @@
-# Linter for Nix using tree-sitter 🌳 + ❄️
+# Semantic linter for Nix using tree-sitter 🌳 + ❄️
 
-[![asciicast](https://asciinema.org/a/483158.svg)](https://asciinema.org/a/483158)
+[![asciicast](https://asciinema.org/a/483977.svg)](https://asciinema.org/a/483977)
 
-This is a simple linter for Nix that uses
-[tree-sitter](https://tree-sitter.github.io/tree-sitter/).  I plan on
-extending it with more detections in the future.  Currently we have:
+This is a semantic linter for Nix that uses
+[tree-sitter](https://tree-sitter.github.io/tree-sitter/).  Currently
+we have the following detections:
 
-- [x] `pkg-config` in `buildInputs`
+- [x] `pkg-config`, `cmake` in `buildInputs`
 - [x] `dontBuild = true` in `stdenv.mkDerivation`
 - [x] redundant packages from `stdenv` in `nativeBuildInputs`
 - [x] `pytestCheckHook` in `checkInputs`
 
+## Features
+- **Semantic linting**: forget about hacking up regexes, we run
+  queries directly on parse trees created by tree-sitter
+- **Syntax-aware**: `nix-lint` can easily handle multi-line
+  expressions, eliminates false-positives from strings and comments
+  and gives exact spans for matches
+- **Robust**: lint Nix files even in the presence of syntax errors
+- **Hackable**: create your own lints by writing queries or by using
+  JavaScript
+
 ## Usage
+By default the tool will recurse through every `.nix` file in the
+provided path.  Passing the `pkgs` subdirectory of Nixpkgs is
+recommended.
 ```ShellSession
-$ npm run lint <path to nixpkgs>
+$ npm run lint <path to folder>
 ```
 
 ## Motivation
