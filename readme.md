@@ -12,7 +12,7 @@ we have the following detections:
 - [x] `pytestCheckHook` in `checkInputs`
 
 ## Features
-- **Fast**: lints all of Nixpkgs in around 30 seconds
+- **Fast**: lints all of Nixpkgs in under 20 seconds
 - **Semantic linting**: forget about hacking up regexes, we run
   queries directly on parse trees created by tree-sitter
 - **Syntax-aware**: `nix-lint` can easily handle multi-line

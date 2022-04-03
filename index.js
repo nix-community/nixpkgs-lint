@@ -1,6 +1,6 @@
 import Parser from "tree-sitter";
 import Nix from "tree-sitter-nix";
-import { readFileSync, readdirSync, statSync } from "fs";
+import { readFileSync, readdirSync, statSync, promises as fs } from "fs";
 import { join } from "path";
 import enquirer from "enquirer";
 
@@ -45,14 +45,16 @@ function capturesByName(tree, query, name) {
 }
 
 // Ignoring hidden files, get all the .nix files and traverse the tree
-let files = [];
-function recurseDir(Directory) {
-  readdirSync(Directory).forEach((File) => {
-    if ((/(^|\/)\.[^\/\.]/g).test(File)) return;
-    const Absolute = join(Directory, File);
-    if (statSync(Absolute).isDirectory()) return recurseDir(Absolute);
-    else return files.push(Absolute);
+function recurseDir(directory, files) {
+  readdirSync(directory).forEach((file) => {
+    if (/(^|\/)\.[^\/\.]/g.test(file)) return;
+    const absolute = join(directory, file);
+    if (statSync(absolute).isDirectory()) return recurseDir(absolute, files);
+    else {
+      if (file.split(".").pop() == "nix") return files.push(absolute);
+    }
   });
+  return files;
 }
 
 const pause = () => new Promise((res) => setTimeout(res, 0));
@@ -127,10 +129,10 @@ async function run_new(queryPred) {
   process.stdin.resume();
   const parser = new Parser();
   parser.setLanguage(Nix);
-  recurseDir(nixpkgsPath);
-  Promise.allSettled(
+  let files = recurseDir(nixpkgsPath, []);
+  await Promise.allSettled(
     files.map(async (file) => {
-      const tree = parser.parse(readFileSync(file, "utf8"));
+      const tree = parser.parse(await fs.readFile(file, "utf8"));
       let l = queryThenWalk(tree, queryPred);
       if (l.length > 0) {
         Promise.all(
@@ -152,10 +154,10 @@ async function run_old(query) {
   process.stdin.resume();
   const parser = new Parser();
   parser.setLanguage(Nix);
-  recurseDir(nixpkgsPath);
-  Promise.allSettled(
+  let files = recurseDir(nixpkgsPath, []);
+  await Promise.allSettled(
     files.map(async (file) => {
-      const tree = parser.parse(readFileSync(file, "utf8"));
+      const tree = parser.parse(await fs.readFile(file, "utf8"));
       let l = capturesByName(tree, query, "q");
       if (l.length > 0) {
         console.log(file + ":" + (l[0].row + 1));
@@ -229,11 +231,11 @@ const prompt = new Select({
   format: (_) => "",
 });
 
-function run_dispatch(r) {
+async function run_dispatch(r) {
   if (r.b) {
-    return run_new(r.q);
+    await run_new(r.q);
   } else {
-    return run_old(new Query(Nix, r.q));
+    await run_old(new Query(Nix, r.q));
   }
 }
 
