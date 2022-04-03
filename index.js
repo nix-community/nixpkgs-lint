@@ -1,6 +1,6 @@
 import Parser from "tree-sitter";
 import Nix from "tree-sitter-nix";
-import { readFileSync, readdirSync, statSync, promises as fs } from "fs";
+import { readdirSync, statSync, promises as fs } from "fs";
 import { join } from "path";
 import enquirer from "enquirer";
 
@@ -57,29 +57,11 @@ function recurseDir(directory, files) {
   return files;
 }
 
-const pause = () => new Promise((res) => setTimeout(res, 0));
-
-const textStartLength = 50;
-
 // https://github.com/tree-sitter/node-tree-sitter/issues/94#issuecomment-952805038
 function walk_cursor_rec(cursor, level = 0, p, acc) {
   // top-down = handle node -> go to next node
   // depth-first = gotoFirstChild -> gotoNextSibling
   while (true) {
-    // handle this node
-    const textEscaped = cursor.nodeText.replace(/\n/g, "\\n");
-    const typeEscaped = cursor.nodeType.replace("\n", "\\n");
-    const textStart =
-      textEscaped.length < textStartLength
-        ? textEscaped
-        : textEscaped.slice(0, textStartLength) + " ...";
-    const textLocation = `${cursor.startIndex} ${cursor.endIndex}`; // offset in utf8 chars (or offset in bytes? which is it?)
-    //const textLocation = `${cursor.startPosition.row}:${cursor.startPosition.column} ${cursor.endPosition.row}:${cursor.endPosition.column}`;
-    const levelString = Array.from({ length: level + 1 })
-      .map((_) => "+")
-      .join("");
-    // console.log(`${levelString} ${textLocation} ${typeEscaped}: ${textStart}`);
-
     if (p(cursor)) {
       acc.push(cursor.currentNode);
     }
@@ -95,8 +77,6 @@ function walk_cursor_rec(cursor, level = 0, p, acc) {
 }
 
 const walk_cursor = (cursor, p) => walk_cursor_rec(cursor, 0, p, []);
-
-// Over-match with query engine first then walk through and get the identifiers
 
 // Combining a query with a predicate
 const mkQueryPred = (query, pred) => ({
