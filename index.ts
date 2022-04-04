@@ -1,11 +1,10 @@
-import Parser from "tree-sitter";
+"use strict";
+import Parser = require("tree-sitter");
 import Nix from "tree-sitter-nix";
-import { readdirSync, statSync, promises as fs } from "fs";
+import { readdirSync, statSync, promises as fs, PathLike } from "fs";
 import { join } from "path";
-import enquirer from "enquirer";
-
 const { Query } = Parser;
-const { Select } = enquirer;
+const { Select } = require("enquirer");
 
 const args = process.argv.slice(2);
 
@@ -34,7 +33,7 @@ function formatCaptures(tree, captures) {
 }
 
 // Get the captures corresponding to a capture name
-function capturesByName(tree, query, name) {
+function capturesByName(tree: Parser.Tree, query: Parser.Query, name: string) {
   return formatCaptures(
     tree,
     query.captures(tree.rootNode).filter((x) => x.name == name)
@@ -45,10 +44,10 @@ function capturesByName(tree, query, name) {
 }
 
 // Ignoring hidden files, get all the .nix files and traverse the tree
-function recurseDir(directory, files) {
+function recurseDir(directory: PathLike, files: string[]) {
   readdirSync(directory).forEach((file) => {
     if (/(^|\/)\.[^\/\.]/g.test(file)) return;
-    const absolute = join(directory, file);
+    const absolute = join(directory as string, file);
     if (statSync(absolute).isDirectory()) return recurseDir(absolute, files);
     else {
       if (file.split(".").pop() == "nix") return files.push(absolute);
@@ -57,8 +56,15 @@ function recurseDir(directory, files) {
   return files;
 }
 
+type QueryPred = (t: Parser.TreeCursor) => Boolean;
+
 // https://github.com/tree-sitter/node-tree-sitter/issues/94#issuecomment-952805038
-function walkCursorRec(cursor, level = 0, p, acc) {
+function walkCursorRec(
+  cursor: Parser.TreeCursor,
+  level = 0,
+  p: QueryPred,
+  acc: Parser.SyntaxNode[]
+) {
   // top-down = handle node -> go to next node
   // depth-first = gotoFirstChild -> gotoNextSibling
   while (true) {
@@ -76,36 +82,42 @@ function walkCursorRec(cursor, level = 0, p, acc) {
   }
 }
 
-const walkCursor = (cursor, p) => walkCursorRec(cursor, 0, p, []);
+function walkCursor(cursor: Parser.TreeCursor, p: QueryPred) {
+  return walkCursorRec(cursor, 0, p, [] as Parser.SyntaxNode[]);
+}
 
 // Combining a query with a predicate
-const mkQueryPred = (query, pred) => ({
+const mkQueryPred = (query: string, pred: QueryPred) => ({
   query: new Query(Nix, query),
   pred: pred,
 });
 
 // Query the tree then walk with a predicate
-function queryThenWalk(tree, queryPred) {
+function queryThenWalk(
+  tree: Parser.Tree,
+  queryPred: { query: Parser.Query; pred: QueryPred }
+) {
   return queryPred.query
     .captures(tree.rootNode)
-    .filter((x) => x.name == "q")
-    .map((t) => walkCursor(t.node.walk(), queryPred.pred))
+    .filter((x: Parser.QueryCapture) => x.name == "q")
+    .map((t: Parser.QueryCapture) => walkCursor(t.node.walk(), queryPred.pred))
     .flat()
     .map((x) => {
       return {
-        text: tree.getText(x),
+        text: x.text,
         start: x.startPosition,
         end: x.endPosition,
       };
     });
 }
 
-const matchIdent = (t) => (x) => x.nodeType == "identifier" && x.nodeText == t;
+const matchIdent = (t: string) => (x: Parser.TreeCursor) =>
+  x.nodeType == "identifier" && x.nodeText == t;
 
 const matchIdentRegex = (t) => (x) =>
   x.nodeType == "identifier" && x.nodeText.match(t);
 
-async function runNew(queryPred) {
+async function runNew(queryPred: { query: Parser.Query; pred: QueryPred }) {
   process.stdin.resume();
   const parser = new Parser();
   parser.setLanguage(Nix);
@@ -130,7 +142,7 @@ async function runNew(queryPred) {
   process.exit(0);
 }
 
-async function runOld(query) {
+async function runOld(query: Parser.Query) {
   process.stdin.resume();
   const parser = new Parser();
   parser.setLanguage(Nix);
@@ -207,15 +219,17 @@ const prompt = new Select({
       ),
     },
   ],
-  result: (x) => ({ q: x, b: x instanceof Object }),
+  result: (x) => (x instanceof Object ? { q: x } : { s: x }),
   format: (_) => "",
 });
 
-async function runDispatch(r) {
-  if (r.b) {
+async function runDispatch(
+  r: { q: { query: Parser.Query; pred: QueryPred } } | { s: string }
+) {
+  if ("q" in r) {
     await runNew(r.q);
   } else {
-    await runOld(new Query(Nix, r.q));
+    await runOld(new Query(Nix, r.s));
   }
 }
 

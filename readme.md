@@ -20,7 +20,7 @@ we have the following detections:
   and gives exact spans for matches
 - **Robust**: lint Nix files even in the presence of syntax errors
 - **Hackable**: create your own lints by writing queries or by using
-  JavaScript
+  TypeScript
 
 ## Usage
 By default the tool will recurse through every `.nix` file in the
