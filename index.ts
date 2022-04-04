@@ -21,26 +21,21 @@ process.on("SIGINT", () => {
 const nixpkgsPath = args[0];
 
 // Given a raw list of captures, extract the row, column and text.
-function formatCaptures(tree, captures) {
+function formatCaptures(captures: Parser.QueryCapture[]) {
   return captures.map((c) => {
-    const node = c.node;
-    delete c.node;
-    c.text = tree.getText(node);
-    c.row = node.startPosition.row;
-    c.column = node.startPosition.column;
-    return c;
+    return {
+      text: c.node.text,
+      row: c.node.startPosition.row,
+      column: c.node.startPosition.column,
+    };
   });
 }
 
 // Get the captures corresponding to a capture name
 function capturesByName(tree: Parser.Tree, query: Parser.Query, name: string) {
   return formatCaptures(
-    tree,
     query.captures(tree.rootNode).filter((x) => x.name == name)
-  ).map((x) => {
-    delete x.name;
-    return x;
-  });
+  );
 }
 
 // Ignoring hidden files, get all the .nix files and traverse the tree
