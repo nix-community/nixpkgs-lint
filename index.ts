@@ -1,10 +1,12 @@
 "use strict";
 import Parser = require("tree-sitter");
+// @ts-ignore
 import Nix from "tree-sitter-nix";
 import { readdirSync, statSync, promises as fs, PathLike } from "fs";
 import { join } from "path";
 const { Query } = Parser;
-const { Select } = require("enquirer");
+// @ts-ignore
+import { Select } from "enquirer";
 
 const args = process.argv.slice(2);
 
