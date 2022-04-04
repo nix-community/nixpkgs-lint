@@ -58,7 +58,7 @@ function recurseDir(directory, files) {
 }
 
 // https://github.com/tree-sitter/node-tree-sitter/issues/94#issuecomment-952805038
-function walk_cursor_rec(cursor, level = 0, p, acc) {
+function walkCursorRec(cursor, level = 0, p, acc) {
   // top-down = handle node -> go to next node
   // depth-first = gotoFirstChild -> gotoNextSibling
   while (true) {
@@ -67,7 +67,7 @@ function walk_cursor_rec(cursor, level = 0, p, acc) {
     }
     // go to next node
     if (cursor.gotoFirstChild()) {
-      walk_cursor_rec(cursor, level + 1, p, acc);
+      walkCursorRec(cursor, level + 1, p, acc);
       cursor.gotoParent();
     }
     if (!cursor.gotoNextSibling()) {
@@ -76,7 +76,7 @@ function walk_cursor_rec(cursor, level = 0, p, acc) {
   }
 }
 
-const walk_cursor = (cursor, p) => walk_cursor_rec(cursor, 0, p, []);
+const walkCursor = (cursor, p) => walkCursorRec(cursor, 0, p, []);
 
 // Combining a query with a predicate
 const mkQueryPred = (query, pred) => ({
@@ -89,7 +89,7 @@ function queryThenWalk(tree, queryPred) {
   return queryPred.query
     .captures(tree.rootNode)
     .filter((x) => x.name == "q")
-    .map((t) => walk_cursor(t.node.walk(), queryPred.pred))
+    .map((t) => walkCursor(t.node.walk(), queryPred.pred))
     .flat()
     .map((x) => {
       return {
@@ -105,7 +105,7 @@ const matchIdent = (t) => (x) => x.nodeType == "identifier" && x.nodeText == t;
 const matchIdentRegex = (t) => (x) =>
   x.nodeType == "identifier" && x.nodeText.match(t);
 
-async function run_new(queryPred) {
+async function runNew(queryPred) {
   process.stdin.resume();
   const parser = new Parser();
   parser.setLanguage(Nix);
@@ -130,7 +130,7 @@ async function run_new(queryPred) {
   process.exit(0);
 }
 
-async function run_old(query) {
+async function runOld(query) {
   process.stdin.resume();
   const parser = new Parser();
   parser.setLanguage(Nix);
@@ -211,12 +211,12 @@ const prompt = new Select({
   format: (_) => "",
 });
 
-async function run_dispatch(r) {
+async function runDispatch(r) {
   if (r.b) {
-    await run_new(r.q);
+    await runNew(r.q);
   } else {
-    await run_old(new Query(Nix, r.q));
+    await runOld(new Query(Nix, r.q));
   }
 }
 
-prompt.run().then(run_dispatch).catch(console.error);
+prompt.run().then(runDispatch).catch(console.error);
