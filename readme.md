@@ -26,6 +26,8 @@ we have the following detections:
 By default the tool will recurse through every `.nix` file in the
 provided path.
 ```ShellSession
+$ nix-shell
+$ npm install
 $ npm run lint <path to folder>
 ```
 
