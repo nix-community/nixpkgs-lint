@@ -1,6 +1,17 @@
 { sources ? import ./nix/sources.nix }:
-with (import sources.nixpkgs {}).pkgs;
+with (import sources.nixpkgs { }).pkgs;
 
-mkShell {
-  packages = [ nodejs-16_x python3 ];
+let
+  ourNode = nodejs-16_x;
+  ourYarn = yarn.override { nodejs = ourNode; };
+in mkShell {
+  packages = [
+    ourYarn
+    ourNode
+    python3
+    (yarn2nix.override {
+      nodejs = ourNode;
+      yarn = ourYarn;
+    })
+  ];
 }

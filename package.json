@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Linter for Nix",
   "main": "index.ts",
+  "bin": "built/index.js",
   "scripts": {
     "lint": "ts-node index.ts"
   },
