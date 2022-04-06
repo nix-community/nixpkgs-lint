@@ -83,23 +83,26 @@ function walkCursor(cursor: Parser.TreeCursor, p: QueryPred) {
   return walkCursorRec(cursor, 0, p, [] as Parser.SyntaxNode[]);
 }
 
-type QueryPredObj = { query: Parser.Query; pred: QueryPred };
+type QueryPredObj = { q: Parser.Query; pred: (x: string) => Boolean };
 
-// Combining a query with a predicate
-function mkQueryPred(query: string, pred: QueryPred): QueryPredObj {
-  return {
-    query: new Query(Nix, query),
-    pred: pred,
-  };
-}
-
-// Query the tree then walk with a predicate
-function queryThenWalk(tree: Parser.Tree, queryPred: QueryPredObj) {
-  return queryPred.query
+// Find matching identifiers in tree
+function queryThenWalk2(
+  tree: Parser.Tree,
+  capture: string,
+  query: Parser.Query,
+  pred: (t: string) => Boolean
+) {
+  return query
     .captures(tree.rootNode)
-    .filter((x: Parser.QueryCapture) => x.name == "q")
-    .map((t: Parser.QueryCapture) => walkCursor(t.node.walk(), queryPred.pred))
+    .filter((x: Parser.QueryCapture) => x.name == capture)
+    .map((x) => x.node)
+    .map((x) => {
+      let p1 = x.startPosition;
+      let p2 = x.endPosition;
+      return x.descendantsOfType("identifier", p1, p2);
+    })
     .flat()
+    .filter((x) => pred(x.text))
     .map((x) => {
       return {
         text: x.text,
@@ -109,114 +112,106 @@ function queryThenWalk(tree: Parser.Tree, queryPred: QueryPredObj) {
     });
 }
 
-const matchIdent = (t: string) => (x: Parser.TreeCursor) =>
-  x.nodeType == "identifier" && x.nodeText == t;
+const matchIdent = (t: string) => (x: string) => t == x;
 
-const matchIdentRegex = (t: RegExp) => (x: Parser.TreeCursor) =>
-  x.nodeType == "identifier" && t.test(x.nodeText);
+const matchIdentRegex = (t: RegExp) => (x: string) => t.test(x);
 
-async function runNew(
-  x: { query: Parser.Query; pred: QueryPred } | Parser.Query
-) {
+async function runNew(x: QueryPredObj) {
   process.stdin.resume();
   const parser = new Parser();
   parser.setLanguage(Nix);
   let files = recurseDir(nixpkgsPath, []);
-  if ("pred" in x) {
-    await Promise.allSettled(
-      files.map(async (file) => {
-        const tree = parser.parse(await fs.readFile(file, "utf8"));
-        let l = queryThenWalk(tree, x);
-        if (l.length > 0) {
-          Promise.all(
-            l.map((m) => {
-              console.log(
-                `${file}:${m.start.row + 1} (${m.start.row + 1},${
-                  m.start.column + 1
-                })-(${m.end.row + 1},${m.end.column + 1})`
-              );
-            })
-          );
-        }
-      })
-    );
-  } else {
-    await Promise.allSettled(
-      files.map(async (file) => {
-        const tree = parser.parse(await fs.readFile(file, "utf8"));
-        let l = capturesByName(tree, x, "q");
-        if (l.length > 0) {
-          console.log(file + ":" + (l[0].row + 1));
-        }
-      })
-    );
-  }
+  await Promise.allSettled(
+    files.map(async (file) => {
+      const tree = parser.parse(await fs.readFile(file, "utf8"));
+      let l = queryThenWalk2(tree, "q", x.q, x.pred);
+      if (l.length > 0) {
+        Promise.all(
+          l.map((m) => {
+            console.log(
+              `${file}:${m.start.row + 1} (${m.start.row + 1},${
+                m.start.column + 1
+              })-(${m.end.row + 1},${m.end.column + 1})`
+            );
+          })
+        );
+      }
+    })
+  );
   process.exit(0);
 }
 
-const choices: { message: string; value: string | QueryPredObj }[] = [
+const choices: {
+  message: string;
+  value: { q: string; pred: (t: string) => Boolean };
+}[] = [
   {
     message: "pkg-config in buildInputs",
-    value: mkQueryPred(
-      `((binding attrpath: _ @a expression: _ @l) (#eq? @a "buildInputs") (#match? @l "pkg-config")) @q`,
-      matchIdent("pkg-config")
-    ),
+    value: {
+      q: `((binding attrpath: _ @a expression: _ @l) (#eq? @a "buildInputs") (#match? @l "pkg-config")) @q`,
+      pred: matchIdent("pkg-config"),
+    },
   },
   {
     message: "cmake in buildInputs",
-    value: mkQueryPred(
-      `((binding attrpath: _ @a expression: _ @l) (#eq? @a "buildInputs") (#match? @l "cmake")) @q`,
-      matchIdent("cmake")
-    ),
+    value: {
+      q: `((binding attrpath: _ @a expression: _ @l) (#eq? @a "buildInputs") (#match? @l "cmake")) @q`,
+      pred: matchIdent("cmake"),
+    },
   },
-  {
-    message: "dontBuild = true in stdenv.mkDerivation",
-    value: `
-((apply_expression
-    function: _ @b
-    argument: [(rec_attrset_expression
-                 (binding_set binding:
-                    (binding attrpath: _ @a expression: _ @e)))
-               (attrset_expression
-                 (binding_set binding:
-                    (binding attrpath: _ @a expression: _ @e)))
-               ])
- (#match? @b "stdenv\.mkDerivation")
- (#match? @a "dontBuild")
- (#match? @e "true")) @q
-`,
-  },
+  //   {
+  //     message: "dontBuild = true in stdenv.mkDerivation",
+  //     value: `
+  // ((apply_expression
+  //     function: _ @b
+  //     argument: [(rec_attrset_expression
+  //                  (binding_set binding:
+  //                     (binding attrpath: _ @a expression: _ @e)))
+  //                (attrset_expression
+  //                  (binding_set binding:
+  //                     (binding attrpath: _ @a expression: _ @e)))
+  //                ])
+  //  (#match? @b "stdenv\.mkDerivation")
+  //  (#match? @a "dontBuild")
+  //  (#match? @e "true")) @q
+  // `,
+  //   },
   {
     message: "redundant packages from stdenv in nativeBuildInputs",
-    value: mkQueryPred(
-      `
-    ((binding attrpath: _ @a expression: _ @i)
-    (#eq? @a "nativeBuildInputs")
-    (#match? @i "coreutils|findutils|diffutils|gnused|gnugrep|gawk|gnutar|gzip|bzip2\.bin|gnumake|bash|patch|xz\.bin"))
-     @q`,
-      matchIdentRegex(
+    value: {
+      q: `
+      ((binding attrpath: _ @a expression: _ @i)
+      (#eq? @a "nativeBuildInputs")
+      (#match? @i "coreutils|findutils|diffutils|gnused|gnugrep|gawk|gnutar|gzip|bzip2\.bin|gnumake|bash|patch|xz\.bin"))
+  @q`,
+      pred: matchIdentRegex(
         /^(coreutils|findutils|diffutils|gnused|gnugrep|gawk|gnutar|gzip|bzip2\.bin|gnumake|bash|patch|xz\.bin)$/
-      )
-    ),
+      ),
+    },
   },
   {
     message: "pytestCheckHook in checkInputs",
-    value: mkQueryPred(
-      `((binding attrpath: _ @a expression: _ @l) (#eq? @a "checkInputs") (#match? @l "pytestCheckHook")) @q`,
-      matchIdent("pytestCheckHook")
-    ),
+    value: {
+      q: `((binding attrpath: _ @a expression: _ @l) (#eq? @a "checkInputs") (#match? @l "pytestCheckHook")) @q`,
+      pred: matchIdent("pytestCheckHook"),
+    },
   },
 ];
+
 const prompt = new Select({
   name: "query",
   message: "What anti-pattern do you want to debug?",
   choices: choices,
-  result: (x: QueryPredObj | string) =>
-    typeof x === "string" ? new Query(Nix, x) : x,
-  format: (_: QueryPredObj | string) => "",
+  result: (x: { q: string; pred: (t: string) => Boolean }): QueryPredObj => {
+    return {
+      q: new Query(Nix, x.q),
+      pred: x.pred,
+    };
+  },
+  format: (_: QueryPredObj) => "",
 });
 
-async function runDispatch(x: QueryPredObj | Parser.Query) {
+async function runDispatch(x: QueryPredObj) {
   await runNew(x);
 }
 
