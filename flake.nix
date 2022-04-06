@@ -34,7 +34,14 @@
             yarnNix = ./yarn.nix;
             yarnFlags = [ "--offline" "--frozen-lockfile" "--ignore-engines" ];
             pkgConfig = {
-              tree-sitter.nativeBuildInputs = lib.optionals pkgs.stdenv.isDarwin [ pkgs.xcbuild ];
+              tree-sitter-nix = {
+                #nativeBuildInputs = lib.optionals pkgs.stdenv.isDarwin (with pkgs; [ xcbuild darwin.apple_sdk.frameworks.ApplicationServices ]);
+                buildInputs = lib.optionals pkgs.stdenv.isDarwin (with pkgs; [ xcbuild darwin.apple_sdk.frameworks.ApplicationServices ]);
+              };
+              tree-sitter = {
+                #nativeBuildInputs = lib.optionals pkgs.stdenv.isDarwin (with pkgs; [ xcbuild darwin.apple_sdk.frameworks.ApplicationServices ]);
+                buildInputs = lib.optionals pkgs.stdenv.isDarwin (with pkgs; [ xcbuild darwin.apple_sdk.frameworks.ApplicationServices ]);
+              };
             };
 
             postConfigure = ''
