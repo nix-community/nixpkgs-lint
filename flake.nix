@@ -19,6 +19,7 @@
       packages = forAllSystems (system:
         let
           pkgs = nixpkgsFor.${system};
+          lib = pkgs.lib;
           nodejs = pkgs.nodejs-16_x;
           y2n = pkgs.yarn2nix-moretea.override {
             inherit nodejs;
@@ -32,6 +33,9 @@
             yarnLock = ./yarn.lock;
             yarnNix = ./yarn.nix;
             yarnFlags = [ "--offline" "--frozen-lockfile" "--ignore-engines" ];
+            pkgConfig = {
+              tree-sitter.nativeBuildInputs = lib.optionals pkgs.stdenv.isDarwin [ pkgs.xcbuild ];
+            };
 
             postConfigure = ''
               cd deps/nix-lint
