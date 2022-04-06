@@ -1,9 +1,15 @@
 {
   description = "nix-lint";
 
-  inputs.nixpkgs.url = "nixpkgs/nixos-21.11";
+  inputs = {
+    nixpkgs.url = "nixpkgs/nixos-21.11";
+    flake-compat = {
+      url = github:edolstra/flake-compat;
+      flake = false;
+    };
+  };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, flake-compat }:
     let
       supportedSystems =
         [ "x86_64-linux" "x86_64-darwin" "aarch64-linux" "aarch64-darwin" ];
