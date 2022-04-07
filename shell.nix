@@ -9,9 +9,9 @@ in mkShell {
     ourYarn
     ourNode
     python3
-    (yarn2nix.override {
+    (yarn2nix-moretea.override {
       nodejs = ourNode;
       yarn = ourYarn;
-    })
+    }).yarn2nix
   ];
 }
