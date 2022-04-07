@@ -31,7 +31,6 @@
             src = ./.;
             packageJSON = ./package.json;
             yarnLock = ./yarn.lock;
-            yarnNix = ./yarn.nix;
             yarnFlags = [ "--offline" "--frozen-lockfile" "--ignore-engines" ];
             pkgConfig = {
               tree-sitter-nix = {
