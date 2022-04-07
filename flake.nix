@@ -16,9 +16,9 @@
         pkgs = nixpkgs.legacyPackages.${system};
         lib = pkgs.lib;
         nodejs = pkgs.nodejs-16_x;
+        yarn = pkgs.yarn.override { inherit nodejs; };
         y2n = pkgs.yarn2nix-moretea.override {
-          inherit nodejs;
-          yarn = pkgs.yarn.override { inherit nodejs; };
+          inherit nodejs yarn;
         };
       in
       {
@@ -61,6 +61,20 @@
         };
 
         defaultPackage = self.packages.${system}.default;
+
+        devShells = {
+          default = pkgs.mkShell {
+            packages = [
+              yarn
+              nodejs
+              y2n.yarn2nix
+              pkgs.python3
+            ];
+          };
+        };
+
+        devShell = self.devShells.${system}.default;
+
       }
     );
 }
