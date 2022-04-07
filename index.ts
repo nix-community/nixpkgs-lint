@@ -96,11 +96,7 @@ function queryThenWalk2(
     .captures(tree.rootNode)
     .filter((x: Parser.QueryCapture) => x.name == capture)
     .map((x) => x.node)
-    .map((x) => {
-      let p1 = x.startPosition;
-      let p2 = x.endPosition;
-      return x.descendantsOfType("identifier", p1, p2);
-    })
+    .map((x) => x.descendantsOfType("identifier", x.startPosition, x.endPosition))
     .flat()
     .filter((x) => pred(x.text))
     .map((x) => {
