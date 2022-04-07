@@ -141,10 +141,16 @@ async function runNew(x: QueryPredObj) {
   process.exit(0);
 }
 
-const choices: {
-  message: string;
-  value: { q: string; pred: (t: string) => Boolean };
-}[] = [
+type QueryTemplate = { q: string; pred: (t: string) => Boolean };
+
+function realize(x: QueryTemplate): QueryPredObj {
+  return {
+    q: new Query(Nix, x.q),
+    pred: x.pred,
+  };
+}
+
+const choices: { message: string; value: QueryTemplate }[] = [
   {
     message: "pkg-config in buildInputs",
     value: {
@@ -202,12 +208,7 @@ const prompt = new Select({
   name: "query",
   message: "What anti-pattern do you want to debug?",
   choices: choices,
-  result: (x: { q: string; pred: (t: string) => Boolean }): QueryPredObj => {
-    return {
-      q: new Query(Nix, x.q),
-      pred: x.pred,
-    };
-  },
+  result: realize,
   format: (_: QueryPredObj) => "",
 });
 
