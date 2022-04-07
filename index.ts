@@ -102,7 +102,9 @@ function queryThenWalk2(
     .captures(tree.rootNode)
     .filter((x: Parser.QueryCapture) => x.name == capture)
     .map((x) => x.node)
-    .map((x) => x.descendantsOfType("identifier", x.startPosition, x.endPosition))
+    .map((x) =>
+      x.descendantsOfType("identifier", x.startPosition, x.endPosition)
+    )
     .flat()
     .filter((x) => pred(x.text))
     .map((x) => {
@@ -125,6 +127,7 @@ async function runNew(x: QueryPredObj) {
   let files = (
     await Promise.all(src.map((dir: PathLike) => recurseDir(dir, [])))
   ).flat();
+  let res = [];
   await Promise.allSettled(
     files.map(async (file) => {
       const tree = parser.parse(await fs.readFile(file, "utf8"));
@@ -132,17 +135,16 @@ async function runNew(x: QueryPredObj) {
       if (l.length > 0) {
         Promise.all(
           l.map((m) => {
+            let data = {
+              file: file,
+              start: { row: m.start.row + 1, column: m.start.column + 1 },
+              end: { row: m.end.row + 1, column: m.end.column + 1 },
+            };
             if (options.json) {
-              console.log({
-                file: file,
-                start: { row: m.start.row + 1, column: m.start.column + 1 },
-                end: { row: m.end.row + 1, column: m.end.column + 1 },
-              });
+              res.push(data);
             } else {
               console.log(
-                `${file}:${m.start.row + 1} (${m.start.row + 1},${
-                  m.start.column + 1
-                })-(${m.end.row + 1},${m.end.column + 1})`
+                `${data.file}:${data.start.row} (${data.start.row},${m.start.column})-(${data.end.row},${data.end.column})`
               );
             }
           })
@@ -150,6 +152,9 @@ async function runNew(x: QueryPredObj) {
       }
     })
   );
+  if (options.json) {
+    console.log(res);
+  }
   process.exit(0);
 }
 
