@@ -1,17 +1,11 @@
-{ sources ? import ./nix/sources.nix }:
-with (import sources.nixpkgs { }).pkgs;
-
-let
-  ourNode = nodejs-16_x;
-  ourYarn = yarn.override { nodejs = ourNode; };
-in mkShell {
-  packages = [
-    ourYarn
-    ourNode
-    python3
-    (yarn2nix-moretea.override {
-      nodejs = ourNode;
-      yarn = ourYarn;
-    }).yarn2nix
-  ];
-}
+(import
+  (
+    let lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+    in
+    fetchTarball {
+      url =
+        "https://github.com/edolstra/flake-compat/archive/${lock.nodes.flake-compat.locked.rev}.tar.gz";
+      sha256 = lock.nodes.flake-compat.locked.narHash;
+    }
+  )
+  { src = ./.; }).shellNix

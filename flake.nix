@@ -3,29 +3,27 @@
 
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-21.11";
+    utils.url = "github:numtide/flake-utils";
     flake-compat = {
       url = github:edolstra/flake-compat;
       flake = false;
     };
   };
 
-  outputs = { self, nixpkgs, flake-compat }:
-    let
-      supportedSystems =
-        [ "x86_64-linux" "x86_64-darwin" "aarch64-linux" "aarch64-darwin" ];
-      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
-      nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
-    in {
-      packages = forAllSystems (system:
-        let
-          pkgs = nixpkgsFor.${system};
-          lib = pkgs.lib;
-          nodejs = pkgs.nodejs-16_x;
-          y2n = pkgs.yarn2nix-moretea.override {
-            inherit nodejs;
-            yarn = pkgs.yarn.override { inherit nodejs; };
-          };
-        in {
+  outputs = { self, nixpkgs, utils, flake-compat }:
+    utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+        lib = pkgs.lib;
+        nodejs = pkgs.nodejs-16_x;
+        yarn = pkgs.yarn.override { inherit nodejs; };
+        y2n = pkgs.yarn2nix-moretea.override {
+          inherit nodejs yarn;
+        };
+      in
+      {
+        packages = {
+          default = self.packages.${system}.nix-lint;
           nix-lint = y2n.mkYarnPackage {
             name = "nix-lint";
             src = ./.;
@@ -59,8 +57,23 @@
               ln -sfv "${nodejs}/include" "$HOME/.cache/node-gyp/${nodejs.version}"
             '';
           };
-        });
+        };
 
-      defaultPackage = forAllSystems (system: self.packages.${system}.nix-lint);
-    };
+        defaultPackage = self.packages.${system}.default;
+
+        devShells = {
+          default = pkgs.mkShell {
+            packages = [
+              yarn
+              nodejs
+              y2n.yarn2nix
+              pkgs.python3
+            ];
+          };
+        };
+
+        devShell = self.devShells.${system}.default;
+
+      }
+    );
 }
