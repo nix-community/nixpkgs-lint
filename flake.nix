@@ -2,7 +2,7 @@
   description = "nix-lint";
 
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-21.11";
+    nixpkgs.url = "nixpkgs/nixpkgs-unstable";
     utils.url = "github:numtide/flake-utils";
     flake-compat = {
       url = github:edolstra/flake-compat;
