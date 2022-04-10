@@ -15,6 +15,8 @@
     "tree-sitter-nix": "github:cstrahan/tree-sitter-nix"
   },
   "dependencies": {
+    "@types/command-line-args": "^5.2.0",
+    "command-line-args": "^5.2.1",
     "enquirer": "^2.3.6",
     "ts-node": "^10.7.0",
     "typescript": "^4.6.3"

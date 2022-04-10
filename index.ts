@@ -8,19 +8,25 @@ const { Query } = Parser;
 // @ts-ignore
 import { Select } from "enquirer";
 
-const args = process.argv.slice(2);
+import commandLineArgs from "command-line-args";
 
-if (args.length != 1) {
-  console.error("Usage: npm run lint <path to folder>");
-  process.exit(1);
-}
+const optionDefinitions = [
+  { name: "json", type: Boolean },
+  { name: "src", type: String, multiple: true, defaultOption: true },
+];
+
+const options = commandLineArgs(optionDefinitions);
 
 process.on("SIGINT", () => {
   console.log("\nExiting, bye!");
   process.exit(0);
 });
 
-const nixpkgsPath = args[0];
+if (options.src === undefined) {
+  console.error("Usage: npm run lint [--json] <list of paths>");
+  process.exit(1);
+}
+const src = options.src;
 
 // Given a raw list of captures, extract the row, column and text.
 function formatCaptures(captures: Parser.QueryCapture[]) {
@@ -41,7 +47,7 @@ function capturesByName(tree: Parser.Tree, query: Parser.Query, name: string) {
 }
 
 // Ignoring hidden files, get all the .nix files and traverse the tree
-function recurseDir(directory: PathLike, files: string[]) {
+async function recurseDir(directory: PathLike, files: string[]) {
   readdirSync(directory).forEach((file) => {
     if (/(^|\/)\.[^\/\.]/g.test(file)) return;
     const absolute = join(directory as string, file);
@@ -96,7 +102,9 @@ function queryThenWalk2(
     .captures(tree.rootNode)
     .filter((x: Parser.QueryCapture) => x.name == capture)
     .map((x) => x.node)
-    .map((x) => x.descendantsOfType("identifier", x.startPosition, x.endPosition))
+    .map((x) =>
+      x.descendantsOfType("identifier", x.startPosition, x.endPosition)
+    )
     .flat()
     .filter((x) => pred(x.text))
     .map((x) => {
@@ -116,7 +124,10 @@ async function runNew(x: QueryPredObj) {
   process.stdin.resume();
   const parser = new Parser();
   parser.setLanguage(Nix);
-  let files = recurseDir(nixpkgsPath, []);
+  let files = (
+    await Promise.all(src.map((dir: PathLike) => recurseDir(dir, [])))
+  ).flat();
+  let res = [];
   await Promise.allSettled(
     files.map(async (file) => {
       const tree = parser.parse(await fs.readFile(file, "utf8"));
@@ -124,16 +135,26 @@ async function runNew(x: QueryPredObj) {
       if (l.length > 0) {
         Promise.all(
           l.map((m) => {
-            console.log(
-              `${file}:${m.start.row + 1} (${m.start.row + 1},${
-                m.start.column + 1
-              })-(${m.end.row + 1},${m.end.column + 1})`
-            );
+            let data = {
+              file: file,
+              start: { row: m.start.row + 1, column: m.start.column + 1 },
+              end: { row: m.end.row + 1, column: m.end.column + 1 },
+            };
+            if (options.json) {
+              res.push(data);
+            } else {
+              console.log(
+                `${data.file}:${data.start.row} (${data.start.row},${m.start.column})-(${data.end.row},${data.end.column})`
+              );
+            }
           })
         );
       }
     })
   );
+  if (options.json) {
+    console.log(res);
+  }
   process.exit(0);
 }
 
