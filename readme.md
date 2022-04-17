@@ -27,7 +27,7 @@ By default the tool will recurse through every `.nix` file in the
 provided path.
 ```ShellSession
 $ nix build 
-$ ./result/bin/nix-lint <path to folder>
+$ ./result/bin/nix-lint <file or directory>
 ```
 
 ## Motivation
