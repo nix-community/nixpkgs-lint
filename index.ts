@@ -125,7 +125,11 @@ async function runNew(x: QueryPredObj) {
   const parser = new Parser();
   parser.setLanguage(Nix);
   let files = (
-    await Promise.all(src.map((dir: PathLike) => recurseDir(dir, [])))
+    await Promise.all(
+      src.map((dir: PathLike) =>
+        statSync(dir).isDirectory() ? recurseDir(dir, []) : [dir]
+      )
+    )
   ).flat();
   let res = [];
   await Promise.allSettled(
