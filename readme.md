@@ -23,6 +23,8 @@ we have the following detections:
   TypeScript
 
 ## Usage
+To use without installing, run `nix run github:siraben/nix-lint`.
+
 By default the tool will recurse through every `.nix` file in the
 provided path.
 ```ShellSession
