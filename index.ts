@@ -180,6 +180,13 @@ const choices: { message: string; value: QueryTemplate }[] = [
     },
   },
   {
+    message: "makeWrapper in buildInputs",
+    value: {
+      q: `((binding attrpath: _ @a expression: _ @l) (#eq? @a "buildInputs") (#match? @l "makeWrapper")) @q`,
+      pred: matchIdent("makeWrapper"),
+    },
+  },
+  {
     message: "cmake in buildInputs",
     value: {
       q: `((binding attrpath: _ @a expression: _ @l) (#eq? @a "buildInputs") (#match? @l "cmake")) @q`,
