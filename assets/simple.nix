@@ -1,8 +1,8 @@
-{ stdenv, pkg-config }:
+{ stdenv, pkg-config, cmake }:
 
 stdenv.mkDerivation {
   buildInputs = [
-    # We want to use pkg-config
     pkg-config
+    cmake
   ];
 }
