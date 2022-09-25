@@ -17,8 +17,7 @@ we have the following detections:
   expressions, eliminates false-positives from strings and comments
   and gives exact spans for matches
 - **Robust**: lint Nix files even in the presence of syntax errors
-- **Hackable**: create your own lints by writing queries or by using
-  TypeScript
+- **Hackable**: create your own lints by writing queries or Rust code
 
 ## Usage
 To use without installing, run `nix run github:nix-community/nixpkgs-lint`.
