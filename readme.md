@@ -10,7 +10,7 @@ we have the following detections:
 - [x] redundant packages from `stdenv` in `nativeBuildInputs`
 
 ## Features
-- **Fast**: lints all of Nixpkgs in under 10 seconds
+- **Fast**: lints all of Nixpkgs in under 3 seconds
 - **Semantic linting**: forget about hacking up regexes, we run
   queries directly on parse trees created by tree-sitter
 - **Syntax-aware**: `nixpkgs-lint` can easily handle multi-line
