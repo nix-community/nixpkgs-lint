@@ -161,14 +161,14 @@ fn main() -> ExitCode {
     let mut match_vec: Vec<AMatch> = Vec::new();
 
     let queries = vec![
-        (AQuery {
-            name: "redundant package from stdenv in nativeBuildInputs".to_string(),
-            solution: "remove this from nativeBuildInputs".to_string(),
-            what: r"coreutils|findutils|diffutils|gnused|gnugrep|gawk|gnutar|gzip|bzip2\.bin|gnumake|bash|patch|xz\.bin".to_string(),
-            in_what: "nativeBuildInputs".to_string(),
-            type_of_query: QueryType::List,
-            type_of_fix: TypeOfFix::Remove,
-        }),
+        //(AQuery {
+        //    name: "redundant package from stdenv in nativeBuildInputs".to_string(),
+        //    solution: "remove this from nativeBuildInputs".to_string(),
+        //    what: r"coreutils|findutils|diffutils|gnugrep|gawk|gnutar|gzip|bzip2\.bin|gnumake|bash|patch|xz\.bin|file".to_string(),
+        //    in_what: "nativeBuildInputs".to_string(),
+        //    type_of_query: QueryType::List,
+        //    type_of_fix: TypeOfFix::Remove,
+        //}),
         (AQuery {
             name: "build time tool in buildInputs".to_string(),
             solution: "move this from buildInputs to nativeBuildInputs".to_string(),
