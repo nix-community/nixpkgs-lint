@@ -1,21 +1,19 @@
-# Semantic linter for Nix using tree-sitter 🌳 + ❄️
+# Semantic linter for Nixpkgs using tree-sitter 🌳 + ❄️
 
 [![asciicast](https://asciinema.org/a/483977.svg)](https://asciinema.org/a/483977)
 
-This is a semantic linter for Nix that uses
+This is a semantic linter for Nixpkgs that uses
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/).  Currently
 we have the following detections:
 
-- [x] `pkg-config`, `cmake` in `buildInputs`
-- [x] `dontBuild = true` in `stdenv.mkDerivation`
+- [x] `cmake`, `makeWrapper`, `pkg-config` in `buildInputs`
 - [x] redundant packages from `stdenv` in `nativeBuildInputs`
-- [x] `pytestCheckHook` in `checkInputs`
 
 ## Features
-- **Fast**: lints all of Nixpkgs in under 20 seconds
+- **Fast**: lints all of Nixpkgs in under 10 seconds
 - **Semantic linting**: forget about hacking up regexes, we run
   queries directly on parse trees created by tree-sitter
-- **Syntax-aware**: `nix-lint` can easily handle multi-line
+- **Syntax-aware**: `nixpkgs-lint` can easily handle multi-line
   expressions, eliminates false-positives from strings and comments
   and gives exact spans for matches
 - **Robust**: lint Nix files even in the presence of syntax errors
@@ -23,13 +21,13 @@ we have the following detections:
   TypeScript
 
 ## Usage
-To use without installing, run `nix run github:siraben/nix-lint`.
+To use without installing, run `nix run github:nix-community/nixpkgs-lint`.
 
-By default the tool will recurse through every `.nix` file in the
-provided path.
+The tool will recurse through every `.nix` file in the
+provided path(,s).
 ```ShellSession
 $ nix build 
-$ ./result/bin/nix-lint <file or directory>
+$ ./result/bin/nixpkgs-lint <files or directories>
 ```
 
 ## Motivation
@@ -62,64 +60,6 @@ tree-sitter](https://github.com/cstrahan/tree-sitter-nix) has been
 well-tested and tree-sitter having bindings in several languages gives
 you options in how to work with the resulting AST.  You also get
 things like a location-annotated AST and error recovery for free.
-
-In any case, suppose we wanted to find usages of `pkg-config` in
-`buildInputs`, this corresponds to the tree-sitter query
-
-```scheme
-((binding attrpath: _ @a expression: (list_expression element: (variable_expression name: _ @i)))
- (#eq? @a "buildInputs")
- (#eq? @i "pkg-config")
- ) @b
-```
-
-We use a variation of this query in JavaScript to not restrict
-ourselves to when the right-hand side of the binding is not a
-`list_expression` (which occurs frequently).  The JavaScript we write
-is
-
-```javascript
-files.forEach(file => {
-    const tree = parser.parse(readFileSync(file, "utf8"));
-    let l = capturesByName(tree, pkgQuery, "l").filter((x) => x.text.includes('pkg-config'));
-    if (l.length > 0) {
-        console.log(file);
-        console.log(l);
-    }
-});
-```
-
-Then we can get the output with the exact span of the right-hand side
-of the binding for more processing.
-
-```ShellSession
-$ npm run lint ~/Git/forks/nixpkgs
-
-> formula-lint@1.0.0 lint
-> node index.js "/Users/siraben/Git/forks/nixpkgs"
-
-/Users/siraben/Git/forks/nixpkgs/pkgs/applications/audio/aumix/default.nix
-[
-  {
-    text: '[ gettext ncurses ]\n    ++ lib.optionals gtkGUI [ pkg-config gtk2 ]',
-    row: 30,
-    column: 16
-  }
-]
-/Users/siraben/Git/forks/nixpkgs/pkgs/applications/audio/grandorgue/default.nix
-[
-  {
-    text: '[ pkg-config fftwFloat alsa-lib zlib wavpack wxGTK31 udev ]\n' +
-      '    ++ lib.optional jackaudioSupport libjack2',
-    row: 16,
-    column: 16
-  }
-]
-```
-
-Note that this isn't meant to be a criticism of existing parsers and
-linters for Nix, but I wanted to get a linter off the ground that was
-easier to write and extend gradually.
 
 ## License
 This repository is licensed under the MIT license.

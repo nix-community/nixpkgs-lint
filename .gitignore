@@ -3,3 +3,8 @@
 node_modules
 built
 result
+
+
+# Added by cargo
+
+/target
