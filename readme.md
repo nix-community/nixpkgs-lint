@@ -1,8 +1,8 @@
-# Semantic linter for nixpkgs using tree-sitter 🌳 + ❄️
+# Semantic linter for Nixpkgs using tree-sitter 🌳 + ❄️
 
 [![asciicast](https://asciinema.org/a/483977.svg)](https://asciinema.org/a/483977)
 
-This is a semantic linter for nixpkgs that uses
+This is a semantic linter for Nixpkgs that uses
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/).  Currently
 we have the following detections:
 

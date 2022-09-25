@@ -147,10 +147,7 @@ fn find_nix_files(path: PathBuf) -> Vec<String> {
     WalkDir::new(path)
         .into_iter()
         .filter_entry(|e| !is_hidden(e))
-        .filter_map(|entry| match entry {
-            Ok(entry) => Some(entry),
-            Err(_) => None,
-        })
+        .filter_map(|entry| entry.ok())
         .filter(is_nix_file)
         .map(|f| f.path().to_str().unwrap().to_owned())
         .collect()

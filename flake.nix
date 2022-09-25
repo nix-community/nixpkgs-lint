@@ -1,5 +1,5 @@
 {
-  description = "Semantic linter for nixpkgs using tree-sitter";
+  description = "Semantic linter for Nixpkgs using tree-sitter";
 
   inputs = {
     naersk = {

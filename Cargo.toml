@@ -1,6 +1,6 @@
 [package]
 name = "nixpkgs-lint"
-description = "Semantic linter for nixpkgs using tree-sitter"
+description = "Semantic linter for Nixpkgs using tree-sitter"
 version = "0.1.0"
 edition = "2021"
 authors = ["Artturin <Artturin@artturin.com>"]
