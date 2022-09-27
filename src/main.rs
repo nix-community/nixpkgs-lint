@@ -69,7 +69,7 @@ struct AMatch {
     query: AQuery,
 }
 
-fn find_lints(path: &str, queries: &Vec<AQuery>) -> Vec<AMatch> {
+fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: bool) -> Vec<AMatch> {
     let code = read_to_string(&path).unwrap().trim().to_owned();
     let mut parser = tree_sitter::Parser::new();
     parser
@@ -81,6 +81,13 @@ fn find_lints(path: &str, queries: &Vec<AQuery>) -> Vec<AMatch> {
         .expect("Error parsing the nix code");
 
     let mut match_vec: Vec<AMatch> = Vec::new();
+
+    if printtree {
+        println!("sexp of path {}", path);
+        println!("text: \n{}", text_from_node(&tree.root_node(), &code));
+        println!("sexp: \n{}", tree.root_node().to_sexp());
+        return match_vec;
+    }
 
     for q in queries {
         let query =
@@ -195,7 +202,7 @@ fn main() -> ExitCode {
             entries
                 .into_par_iter()
                 .progress_with(pb)
-                .flat_map(|entry| find_lints(&entry, &queries)),
+                .flat_map(|entry| find_lints(&entry, &queries, args.print_root_node_sexp)),
         );
     }
 
@@ -262,4 +269,8 @@ struct Opt {
     /// Output format. supported values: json
     #[clap(arg_enum, long, default_value_t = DisplayFormats::Ariadne)]
     format: DisplayFormats,
+
+    /// Print sexp of the root_node for debugging
+    #[clap(long = "print-root-node-sexp")]
+    print_root_node_sexp: bool,
 }
