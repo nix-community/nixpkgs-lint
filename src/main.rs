@@ -17,30 +17,46 @@ fn text_from_node(node: &tree_sitter::Node, code: &str) -> String {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 enum QueryType {
     List,
+    BindingAStringInsteadOfList,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 enum TypeOfFix {
     Remove,
     Move,
+    ConvertToList,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct AQuery {
     name: String,
     solution: String,
-    type_of_fix: TypeOfFix,
     /// a regex pattern.
     /// examples: "pkg-config", "cmake|makeWrapper"
     what: String,
     in_what: String,
     type_of_query: QueryType,
+    type_of_fix: TypeOfFix,
 }
 
 impl AQuery {
     fn query_string(&self) -> String {
         match self.type_of_query {
-            QueryType::List => format!("((binding attrpath: _ @a expression: _ @l) (#eq? @a \"{}\") (#match? @l \"{}\")) @q", self.in_what, self.what),
+            QueryType::List => format!(
+                "(
+                    (binding attrpath: _ @a expression: _ @l)
+                    (#eq? @a \"{}\")
+                    (#match? @l \"{}\")
+                ) @q",
+                self.in_what, self.what
+            ),
+            QueryType::BindingAStringInsteadOfList => format!(
+                "(
+                    (binding attrpath: _ @a expression: (string_expression) @l)
+                    (#match? @a \"{}\")
+                ) @q",
+                self.in_what
+            ),
         }
     }
     fn what_to_pred(&self) -> predicates::str::RegexPredicate {
@@ -83,11 +99,26 @@ fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: bool) -> Vec<AMatch>
     let mut match_vec: Vec<AMatch> = Vec::new();
 
     if printtree {
-        println!("sexp of path {}", path);
-        println!("text: \n{}", text_from_node(&tree.root_node(), &code));
-        println!("sexp: \n{}", tree.root_node().to_sexp());
+        println!("path = {}", path);
+        println!("text = \n{}\n", text_from_node(&tree.root_node(), &code));
+        println!("sexp = \n{}", tree.root_node().to_sexp());
+
+        let cursor = &mut tree.root_node().walk();
+        let travel = tree_sitter_traversal::traverse(cursor, tree_sitter_traversal::Order::Pre);
+        for n in travel {
+            println!("========================================================================");
+            // text from node is already in the unnameds kind
+            if !n.is_named() {
+                println!("{:?}", n);
+                continue;
+            }
+            println!("{:?} =", n);
+            println!("{}", text_from_node(&n, &code));
+        }
         return match_vec;
     }
+
+    let mut whole_binding_text = String::new();
 
     for q in queries {
         let query =
@@ -100,28 +131,59 @@ fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: bool) -> Vec<AMatch>
 
             if let Some(node) = qm.nodes_for_capture_index(capture_id).next() {
                 let cursor = &mut node.walk();
+                // Lists need recursive traversal
                 let travel =
                     tree_sitter_traversal::traverse(cursor, tree_sitter_traversal::Order::Pre);
                 for n in travel {
-                    if n.kind() == "list_expression" {
-                        list_range = n.byte_range();
+                    if !n.is_named() {
+                        continue;
                     }
-                    if n.kind() == "identifier" && q.what_to_pred().eval(&text_from_node(&n, &code))
-                    {
-                        match_vec.push(AMatch {
-                            file: path.to_owned(),
-                            message: q.name.to_owned(),
-                            matched: text_from_node(&n, &code),
-                            fix: q.solution.to_owned(),
-                            type_of_fix: q.type_of_fix.to_owned(),
-                            line: n.start_position().row + 1,
-                            //end_line: n.end_position().row + 1,
-                            column: n.start_position().column + 1,
-                            end_column: n.end_position().column + 1,
-                            byte_range: n.byte_range(),
-                            list_byte_range: list_range.to_owned(),
-                            query: q.to_owned(),
-                        });
+                    let match_to_push = |matched| AMatch {
+                        file: path.to_owned(),
+                        message: q.name.to_owned(),
+                        matched,
+                        fix: q.solution.to_owned(),
+                        type_of_fix: q.type_of_fix.to_owned(),
+                        line: n.start_position().row + 1,
+                        //end_line: n.end_position().row + 1,
+                        column: n.start_position().column + 1,
+                        end_column: n.end_position().column + 1,
+                        byte_range: n.byte_range(),
+                        list_byte_range: list_range.to_owned(),
+                        query: q.to_owned(),
+                    };
+                    match q.type_of_query {
+                        QueryType::List => match n.kind() {
+                            "list_expression" => {
+                                list_range = n.byte_range();
+                                continue;
+                            }
+                            "identifier" if q.what_to_pred().eval(&text_from_node(&n, &code)) => {
+                                match_vec.push(match_to_push(text_from_node(&n, &code)));
+                            }
+                            _ => {}
+                        },
+                        QueryType::BindingAStringInsteadOfList => {
+                            match n.kind() {
+                                "binding" => {
+                                    // TODO: make 'nixos/lib/test-driver/test_driver/machine.py' '__init__' take a
+                                    // list 'qemuFlags', currently it takes a str
+                                    if predicate::str::starts_with("qemuFlags")
+                                        .eval(&text_from_node(&n, &code))
+                                    {
+                                        break;
+                                    }
+                                    whole_binding_text = text_from_node(&n, &code);
+                                }
+                                "string_expression" => {
+                                    match_vec.push(match_to_push(whole_binding_text.clone()));
+                                    // we only want the first string_expression(whole string) and not the
+                                    // possible string_expression's in interpolation
+                                    break;
+                                }
+                                _ => {}
+                            }
+                        }
                     }
                 }
             }
@@ -164,7 +226,7 @@ fn main() -> ExitCode {
     let args = Opt::parse();
     let mut match_vec: Vec<AMatch> = Vec::new();
 
-    let queries = vec![
+    let mut queries = vec![
         //(AQuery {
         //    name: "redundant package from stdenv in nativeBuildInputs".to_string(),
         //    solution: "remove this from nativeBuildInputs".to_string(),
@@ -182,6 +244,16 @@ fn main() -> ExitCode {
             type_of_fix: TypeOfFix::Move,
         }),
     ];
+    if args.include_unfinished_lints {
+        queries.push(AQuery {
+            name: "*Flags not a list".to_string(),
+            solution: "convert to a list".to_string(),
+            what: "".to_string(),
+            in_what: "Flags".to_string(),
+            type_of_query: QueryType::BindingAStringInsteadOfList,
+            type_of_fix: TypeOfFix::ConvertToList,
+        });
+    }
 
     for mut path in args.file {
         if let Ok(false) = &path.try_exists() {
@@ -202,7 +274,7 @@ fn main() -> ExitCode {
             entries
                 .into_par_iter()
                 .progress_with(pb)
-                .flat_map(|entry| find_lints(&entry, &queries, args.print_root_node_sexp)),
+                .flat_map(|entry| find_lints(&entry, &queries, args.node_debug)),
         );
     }
 
@@ -235,6 +307,7 @@ fn main() -> ExitCode {
                                 .with_color(Color::Blue),
                             );
                         }
+                        QueryType::BindingAStringInsteadOfList => (),
                     };
 
                     report
@@ -270,7 +343,11 @@ struct Opt {
     #[clap(arg_enum, long, default_value_t = DisplayFormats::Ariadne)]
     format: DisplayFormats,
 
-    /// Print sexp of the root_node for debugging
-    #[clap(long = "print-root-node-sexp")]
-    print_root_node_sexp: bool,
+    /// debug nodes
+    #[clap(long = "node-debug")]
+    node_debug: bool,
+
+    /// use lints which haven't been fixed in nixpkgs yet
+    #[clap(long = "include-unfinished-lints")]
+    include_unfinished_lints: bool,
 }
