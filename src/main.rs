@@ -18,12 +18,14 @@ fn text_from_node(node: &tree_sitter::Node, code: &str) -> String {
 enum QueryType {
     List,
     BindingAStringInsteadOfList,
+    ArgToOptionalAList,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 enum TypeOfFix {
     Remove,
     Move,
+    Change,
     ConvertToList,
 }
 
@@ -56,6 +58,18 @@ impl AQuery {
                     (#match? @a \"{}\")
                 ) @q",
                 self.in_what
+            ),
+            QueryType::ArgToOptionalAList => format!(
+                "(
+                    (apply_expression
+                        function:
+                            (apply_expression
+                              function: (_ (_) @a)
+                            )
+                        argument: (list_expression) @l
+                    )
+                    (match? @a \"^optional$\")
+                ) @q",
             ),
         }
     }
@@ -118,7 +132,7 @@ fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: bool) -> Vec<AMatch>
         return match_vec;
     }
 
-    let mut whole_binding_text = String::new();
+    let mut whole_text = String::new();
 
     for q in queries {
         let query =
@@ -173,10 +187,10 @@ fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: bool) -> Vec<AMatch>
                                     {
                                         break;
                                     }
-                                    whole_binding_text = text_from_node(&n, &code);
+                                    whole_text = text_from_node(&n, &code);
                                 }
                                 "string_expression" => {
-                                    match_vec.push(match_to_push(whole_binding_text.clone()));
+                                    match_vec.push(match_to_push(whole_text.clone()));
                                     // we only want the first string_expression(whole string) and not the
                                     // possible string_expression's in interpolation
                                     break;
@@ -184,6 +198,15 @@ fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: bool) -> Vec<AMatch>
                                 _ => {}
                             }
                         }
+                        QueryType::ArgToOptionalAList => match n.kind() {
+                            "apply_expression" => {
+                                whole_text = text_from_node(&n, &code);
+                                match_vec.push(match_to_push(whole_text.clone()));
+                                // we only want the first apply_expression
+                                break;
+                            }
+                            _ => {}
+                        },
                     }
                 }
             }
@@ -253,6 +276,14 @@ fn main() -> ExitCode {
             type_of_query: QueryType::BindingAStringInsteadOfList,
             type_of_fix: TypeOfFix::ConvertToList,
         });
+        queries.push(AQuery {
+            name: "Arg to lib.optional is a list".to_string(),
+            solution: "change lib.optional to lib.optionals".to_string(),
+            what: "".to_string(),
+            in_what: "".to_string(),
+            type_of_query: QueryType::ArgToOptionalAList,
+            type_of_fix: TypeOfFix::Change,
+        });
     }
 
     for mut path in args.file {
@@ -308,6 +339,7 @@ fn main() -> ExitCode {
                             );
                         }
                         QueryType::BindingAStringInsteadOfList => (),
+                        QueryType::ArgToOptionalAList => (),
                     };
 
                     report
