@@ -19,6 +19,7 @@ enum QueryType {
     List,
     BindingAStringInsteadOfList,
     ArgToOptionalAList,
+    XInFormals,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -70,6 +71,17 @@ impl AQuery {
                     )
                     (match? @a \"^optional$\")
                 ) @q",
+            ),
+            QueryType::XInFormals => format!(
+                "(
+                    (function_expression
+                        formals: (formals
+                            (formal
+                                (identifier) @q))
+                    )
+                    (match? @q \"{}\")
+                )",
+                self.what
             ),
         }
     }
@@ -207,6 +219,12 @@ fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: bool) -> Vec<AMatch>
                             }
                             _ => {}
                         },
+                        QueryType::XInFormals => match n.kind() {
+                            "identifier" if q.what_to_pred().eval(&text_from_node(&n, &code)) => {
+                                match_vec.push(match_to_push(text_from_node(&n, &code)));
+                            }
+                            _ => {}
+                        },
                     }
                 }
             }
@@ -284,6 +302,17 @@ fn main() -> ExitCode {
             type_of_query: QueryType::ArgToOptionalAList,
             type_of_fix: TypeOfFix::Change,
         });
+        queries.push(AQuery {
+            name: "Using packages directly from the xorg package set in callPackage arguments is deprecated".to_string(),
+            solution: "convert to using 'xorg.X'".to_string(),
+            what: include_str!("../assets/xorg-package-set-attrs")
+                .to_string()
+                .trim()
+                .replace("\n", "|"),
+            in_what: "".to_string(),
+            type_of_query: QueryType::XInFormals,
+            type_of_fix: TypeOfFix::Change,
+        });
     }
 
     for mut path in args.file {
@@ -340,6 +369,7 @@ fn main() -> ExitCode {
                         }
                         QueryType::BindingAStringInsteadOfList => (),
                         QueryType::ArgToOptionalAList => (),
+                        QueryType::XInFormals => (),
                     };
 
                     report
