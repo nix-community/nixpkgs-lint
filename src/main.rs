@@ -60,7 +60,7 @@ impl AQuery {
                 ) @q",
                 self.in_what
             ),
-            QueryType::ArgToOptionalAList => format!(
+            QueryType::ArgToOptionalAList => String::from(
                 "(
                     (apply_expression
                         function:
@@ -210,15 +210,14 @@ fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: bool) -> Vec<AMatch>
                                 _ => {}
                             }
                         }
-                        QueryType::ArgToOptionalAList => match n.kind() {
-                            "apply_expression" => {
+                        QueryType::ArgToOptionalAList => {
+                            if n.kind() == "apply_expression" {
                                 whole_text = text_from_node(&n, &code);
                                 match_vec.push(match_to_push(whole_text.clone()));
                                 // we only want the first apply_expression
                                 break;
                             }
-                            _ => {}
-                        },
+                        }
                         QueryType::XInFormals => match n.kind() {
                             "identifier" if q.what_to_pred().eval(&text_from_node(&n, &code)) => {
                                 match_vec.push(match_to_push(text_from_node(&n, &code)));
@@ -377,21 +376,21 @@ fn main() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-#[derive(Clone, clap::ValueEnum)]
+#[derive(Clone, Debug, clap::ValueEnum)]
 enum DisplayFormats {
     Ariadne,
     Json,
 }
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[clap(version = crate_version!())]
 struct Opt {
     /// Files or directories
     #[clap(value_name = "FILES/DIRECTORIES")]
     file: Vec<PathBuf>,
 
-    /// Output format. supported values: json
-    #[clap(arg_enum, long, default_value_t = DisplayFormats::Ariadne)]
+    /// Output format
+    #[clap(value_enum, long, default_value_t = DisplayFormats::Ariadne)]
     format: DisplayFormats,
 
     /// debug nodes
@@ -401,4 +400,11 @@ struct Opt {
     /// use lints which haven't been fixed in nixpkgs yet
     #[clap(long = "include-unfinished-lints")]
     include_unfinished_lints: bool,
+
+    /// enable if running in nixpkgs ci
+    #[clap(
+        conflicts_with = "include_unfinished_lints",
+        long = "running-in-nixpkgs-ci"
+    )]
+    running_in_nixpkgs_ci: bool,
 }
