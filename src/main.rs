@@ -302,17 +302,6 @@ fn main() -> ExitCode {
             type_of_query: QueryType::ArgToOptionalAList,
             type_of_fix: TypeOfFix::Change,
         });
-        queries.push(AQuery {
-            name: "Using packages directly from the xorg package set in callPackage arguments is deprecated".to_string(),
-            solution: "convert to using 'xorg.X'".to_string(),
-            what: include_str!("../assets/xorg-package-set-attrs")
-                .to_string()
-                .trim()
-                .replace("\n", "|"),
-            in_what: "".to_string(),
-            type_of_query: QueryType::XInFormals,
-            type_of_fix: TypeOfFix::Change,
-        });
     }
 
     for mut path in args.file {
