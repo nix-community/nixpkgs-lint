@@ -19,10 +19,9 @@ sed -i "s|$OLDVERSION|$NEWVERSION|" Cargo.toml
 # update lockfile
 cargo build
 
-exit
 # Commit and tag the update
 git add Cargo.toml Cargo.lock
-git commit -m "v${VERSION}"
+git commit -m "v${NEWVERSION}"
 git push origin $(git branch --show-current)
-gh release create v${VERSION} -t v${VERSION} -n Pre-release --target $(git branch --show-current) -p
+gh release create v${NEWVERSION} -t v${NEWVERSION} --target $(git branch --show-current) --generate-notes
 
