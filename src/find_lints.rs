@@ -3,10 +3,29 @@ use std::fs::read_to_string;
 
 use crate::query::{AMatch, AQuery, QueryType};
 
-use tree_sitter::QueryCursor;
+use tree_sitter::{QueryCursor, Tree};
 
 fn text_from_node(node: &tree_sitter::Node, code: &str) -> String {
     node.utf8_text(code.as_bytes()).unwrap().to_string()
+}
+
+fn print_tree(path: &str, tree: Tree, code: &str) {
+    println!("path = {}", path);
+    println!("text = \n{}\n", text_from_node(&tree.root_node(), code));
+    println!("sexp = \n{}", tree.root_node().to_sexp());
+
+    let cursor = &mut tree.root_node().walk();
+    let travel = tree_sitter_traversal::traverse(cursor, tree_sitter_traversal::Order::Pre);
+    for n in travel {
+        println!("========================================================================");
+        // text from node is already in the unnameds kind
+        if !n.is_named() {
+            println!("{:?}", n);
+            continue;
+        }
+        println!("{:?} =", n);
+        println!("{}", text_from_node(&n, code));
+    }
 }
 
 pub fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: bool) -> Vec<AMatch> {
@@ -23,22 +42,7 @@ pub fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: bool) -> Vec<AMa
     let mut match_vec: Vec<AMatch> = Vec::new();
 
     if printtree {
-        println!("path = {}", path);
-        println!("text = \n{}\n", text_from_node(&tree.root_node(), &code));
-        println!("sexp = \n{}", tree.root_node().to_sexp());
-
-        let cursor = &mut tree.root_node().walk();
-        let travel = tree_sitter_traversal::traverse(cursor, tree_sitter_traversal::Order::Pre);
-        for n in travel {
-            println!("========================================================================");
-            // text from node is already in the unnameds kind
-            if !n.is_named() {
-                println!("{:?}", n);
-                continue;
-            }
-            println!("{:?} =", n);
-            println!("{}", text_from_node(&n, &code));
-        }
+        print_tree(path, tree, &code);
         return match_vec;
     }
 
