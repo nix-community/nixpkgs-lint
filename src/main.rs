@@ -283,25 +283,24 @@ fn main() -> ExitCode {
             type_of_query: QueryType::List,
             type_of_fix: TypeOfFix::Move,
         }),
-    ];
-    if args.include_unfinished_lints {
-        queries.push(AQuery {
+        (AQuery {
             name: "*Flags not a list".to_string(),
             solution: "convert to a list".to_string(),
             what: "".to_string(),
             in_what: "Flags".to_string(),
             type_of_query: QueryType::BindingAStringInsteadOfList,
             type_of_fix: TypeOfFix::ConvertToList,
-        });
-        queries.push(AQuery {
+        }),
+        (AQuery {
             name: "Arg to lib.optional is a list".to_string(),
             solution: "change lib.optional to lib.optionals".to_string(),
             what: "".to_string(),
             in_what: "".to_string(),
             type_of_query: QueryType::ArgToOptionalAList,
             type_of_fix: TypeOfFix::Change,
-        });
-    }
+        }),
+    ];
+    if args.include_unfinished_lints {}
 
     for mut path in args.file {
         if let Ok(false) = &path.try_exists() {
