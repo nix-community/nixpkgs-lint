@@ -13,7 +13,7 @@ pub fn add_default_queries(queries: &mut Vec<AQuery>) {
         (AQuery {
             name: "*Flags not a list".to_string(),
             solution: "convert to a list".to_string(),
-            what: "".to_string(),
+            what: String::new(),
             in_what: "Flags".to_string(),
             type_of_query: QueryType::BindingAStringInsteadOfList,
             type_of_fix: TypeOfFix::ConvertToList,
@@ -21,8 +21,8 @@ pub fn add_default_queries(queries: &mut Vec<AQuery>) {
         (AQuery {
             name: "Arg to lib.optional is a list".to_string(),
             solution: "change lib.optional to lib.optionals".to_string(),
-            what: "".to_string(),
-            in_what: "".to_string(),
+            what: String::new(),
+            in_what: String::new(),
             type_of_query: QueryType::ArgToOptionalAList,
             type_of_fix: TypeOfFix::Change,
         }),

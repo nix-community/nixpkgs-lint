@@ -9,14 +9,14 @@ pub enum DisplayFormats {
     Json,
 }
 
-pub fn print_matches(display_format: DisplayFormats, match_vec: Vec<AMatch>) {
+pub fn print_matches(display_format: &DisplayFormats, match_vec: &[AMatch]) {
     match display_format {
         DisplayFormats::Json => {
-            let serialized_match = serde_json::to_string_pretty(&match_vec).unwrap();
-            println!("{}", serialized_match);
+            let serialized_match = serde_json::to_string_pretty(match_vec).unwrap();
+            println!("{serialized_match}");
         }
         DisplayFormats::Ariadne => {
-            for m in &match_vec {
+            for m in match_vec {
                 let src_id = m.file.as_str();
                 let mut report =
                     CliReport::build(CliReportKind::Advice, src_id, m.byte_range.start)
@@ -27,17 +27,12 @@ pub fn print_matches(display_format: DisplayFormats, match_vec: Vec<AMatch>) {
                                 .with_color(Color::Magenta),
                         );
 
-                match m.query.type_of_query {
-                    QueryType::List => {
-                        report = report.with_label(
-                            Label::new((src_id, m.list_byte_range.start..m.list_byte_range.end))
-                                .with_message("part of this list")
-                                .with_color(Color::Blue),
-                        );
-                    }
-                    QueryType::BindingAStringInsteadOfList => (),
-                    QueryType::ArgToOptionalAList => (),
-                    QueryType::XInFormals => (),
+                if let QueryType::List = m.query.type_of_query {
+                    report = report.with_label(
+                        Label::new((src_id, m.list_byte_range.start..m.list_byte_range.end))
+                            .with_message("part of this list")
+                            .with_color(Color::Blue),
+                    );
                 };
 
                 report

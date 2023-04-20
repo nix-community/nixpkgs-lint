@@ -39,19 +39,19 @@ fn main() -> ExitCode {
         let length: u64 = entries.len().try_into().unwrap();
         let mut pb = ProgressBar::hidden();
         if length > 1000 {
-            pb = ProgressBar::new(entries.len().try_into().unwrap());
+            pb = ProgressBar::new(length);
         }
 
         match_vec.par_extend(
             entries
                 .into_par_iter()
                 .progress_with(pb)
-                .flat_map(|entry| find_lints(&entry, &queries, args.node_debug)),
+                .flat_map(|entry| find_lints(&entry, &queries, &args.node_debug)),
         );
     }
 
     if !match_vec.is_empty() {
-        print_matches(args.format, match_vec);
+        print_matches(&args.format, &match_vec);
         return ExitCode::FAILURE;
     }
 

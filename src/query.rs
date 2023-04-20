@@ -2,7 +2,7 @@ use predicates::prelude::*;
 use serde::{Deserialize, Serialize};
 
 fn pred(s: &str) -> predicates::str::RegexPredicate {
-    predicate::str::is_match(format!("^({})$", s)).unwrap()
+    predicate::str::is_match(format!("^({s})$")).unwrap()
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
