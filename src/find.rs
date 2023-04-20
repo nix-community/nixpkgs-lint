@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use walkdir::{DirEntry, WalkDir};
 
-
 fn is_hidden(entry: &DirEntry) -> bool {
     entry
         .file_name()

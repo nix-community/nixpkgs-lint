@@ -10,10 +10,10 @@ use query::{AMatch, AQuery};
 use rayon::prelude::*;
 
 mod display;
+mod find;
 mod find_lints;
 mod queries;
 mod query;
-mod find;
 
 fn main() -> ExitCode {
     let args = Opt::parse();
