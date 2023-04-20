@@ -3,6 +3,7 @@
 node_modules
 built
 result
+.direnv
 
 
 # Added by cargo
