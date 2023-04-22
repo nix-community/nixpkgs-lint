@@ -359,6 +359,7 @@ dependencies = [
  "ariadne",
  "clap",
  "indicatif",
+ "lazy_static",
  "predicates",
  "rayon",
  "serde",

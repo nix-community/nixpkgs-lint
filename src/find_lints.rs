@@ -137,7 +137,7 @@ pub fn find_lints(path: &str, text: &str, queries: &Vec<AQuery>, printtree: &boo
 
 #[cfg(test)]
 mod tests {
-    use crate::query::QueryType::*;
+    use crate::queries::QUERIES;
     use crate::query::TypeOfFix::*;
     use crate::{
         queries::add_default_queries,
@@ -174,14 +174,7 @@ mod tests {
                 end_column: 27,
                 byte_range: 112..122,
                 list_byte_range: 94..160,
-                query: AQuery {
-                    name: "build time tool in buildInputs".to_string(),
-                    solution: "move this from buildInputs to nativeBuildInputs".to_string(),
-                    what: "cmake|makeWrapper|pkg-config|intltool|autoreconfHook".to_string(),
-                    in_what: "buildInputs".to_string(),
-                    type_of_query: List,
-                    type_of_fix: Move,
-                },
+                query: QUERIES.get("BuildTimeToolInBuildInputs").unwrap().clone(),
             }),
             (AMatch {
                 file: "".to_string(),
@@ -194,14 +187,7 @@ mod tests {
                 end_column: 22,
                 byte_range: 139..144,
                 list_byte_range: 94..160,
-                query: AQuery {
-                    name: "build time tool in buildInputs".to_string(),
-                    solution: "move this from buildInputs to nativeBuildInputs".to_string(),
-                    what: "cmake|makeWrapper|pkg-config|intltool|autoreconfHook".to_string(),
-                    in_what: "buildInputs".to_string(),
-                    type_of_query: List,
-                    type_of_fix: Move,
-                },
+                query: QUERIES.get("BuildTimeToolInBuildInputs").unwrap().clone(),
             }),
         ];
 
