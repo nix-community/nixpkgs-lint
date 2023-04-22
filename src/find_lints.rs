@@ -1,5 +1,4 @@
 use predicates::prelude::*;
-use std::fs::read_to_string;
 
 use crate::query::{AMatch, AQuery, QueryType};
 
@@ -39,15 +38,13 @@ fn get_tree(text: &str) -> Tree {
         .expect("Error parsing the nix code")
 }
 
-pub fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: &bool) -> Vec<AMatch> {
-    let text = read_to_string(path).unwrap().trim().to_owned();
-
+pub fn find_lints(path: &str, text: &str, queries: &Vec<AQuery>, printtree: &bool) -> Vec<AMatch> {
     let mut match_vec: Vec<AMatch> = Vec::new();
 
-    let tree = get_tree(&text);
+    let tree = get_tree(text);
 
     if *printtree {
-        print_tree(path, &tree, &text);
+        print_tree(path, &tree, text);
         return match_vec;
     }
 
@@ -91,22 +88,21 @@ pub fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: &bool) -> Vec<AM
                                 list_range = n.byte_range();
                                 continue;
                             }
-                            "identifier" if q.what_to_pred().eval(&text_from_node(&n, &text)) => {
-                                match_vec.push(match_to_push(text_from_node(&n, &text)));
+                            "identifier" if q.what_to_pred().eval(&text_from_node(&n, text)) => {
+                                match_vec.push(match_to_push(text_from_node(&n, text)));
                             }
                             _ => {}
                         },
                         QueryType::BindingAStringInsteadOfList => {
                             match n.kind() {
                                 "binding" => {
-                                    // TODO: make 'nixos/lib/test-driver/test_driver/machine.py' '__init__' take a
-                                    // list 'qemuFlags', currently it takes a str
+                                    // TODO: make 'nixos/lib/test-driver/test_driver/machine.py' '__init__' take a list 'qemuFlags', currently it takes a str
                                     if predicate::str::starts_with("qemuFlags")
-                                        .eval(&text_from_node(&n, &text))
+                                        .eval(&text_from_node(&n, text))
                                     {
                                         break;
                                     }
-                                    whole_text = text_from_node(&n, &text);
+                                    whole_text = text_from_node(&n, text);
                                 }
                                 "string_expression" => {
                                     match_vec.push(match_to_push(whole_text.clone()));
@@ -119,15 +115,15 @@ pub fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: &bool) -> Vec<AM
                         }
                         QueryType::ArgToOptionalAList => {
                             if n.kind() == "apply_expression" {
-                                whole_text = text_from_node(&n, &text);
+                                whole_text = text_from_node(&n, text);
                                 match_vec.push(match_to_push(whole_text.clone()));
                                 // we only want the first apply_expression
                                 break;
                             }
                         }
                         QueryType::XInFormals => match n.kind() {
-                            "identifier" if q.what_to_pred().eval(&text_from_node(&n, &text)) => {
-                                match_vec.push(match_to_push(text_from_node(&n, &text)));
+                            "identifier" if q.what_to_pred().eval(&text_from_node(&n, text)) => {
+                                match_vec.push(match_to_push(text_from_node(&n, text)));
                             }
                             _ => {}
                         },
@@ -137,4 +133,78 @@ pub fn find_lints(path: &str, queries: &Vec<AQuery>, printtree: &bool) -> Vec<AM
         }
     }
     match_vec
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::query::QueryType::*;
+    use crate::query::TypeOfFix::*;
+    use crate::{
+        queries::add_default_queries,
+        query::{AMatch, AQuery},
+    };
+
+    use super::find_lints;
+
+    #[test]
+    fn find_lints_simple() {
+        let expr = String::from(
+            "{ stdenv, pkg-config, cmake }:
+
+            stdenv.mkDerivation {
+              buildInputs = [
+                pkg-config
+                cmake
+              ];
+            }",
+        );
+        let mut queries: Vec<AQuery> = Vec::new();
+        add_default_queries(&mut queries);
+        let result = find_lints("", &expr, &queries, &false);
+
+        let expected = [
+            (AMatch {
+                file: "".to_string(),
+                message: "build time tool in buildInputs".to_string(),
+                matched: "pkg-config".to_string(),
+                fix: "move this from buildInputs to nativeBuildInputs".to_string(),
+                type_of_fix: Move,
+                line: 5,
+                column: 17,
+                end_column: 27,
+                byte_range: 112..122,
+                list_byte_range: 94..160,
+                query: AQuery {
+                    name: "build time tool in buildInputs".to_string(),
+                    solution: "move this from buildInputs to nativeBuildInputs".to_string(),
+                    what: "cmake|makeWrapper|pkg-config|intltool|autoreconfHook".to_string(),
+                    in_what: "buildInputs".to_string(),
+                    type_of_query: List,
+                    type_of_fix: Move,
+                },
+            }),
+            (AMatch {
+                file: "".to_string(),
+                message: "build time tool in buildInputs".to_string(),
+                matched: "cmake".to_string(),
+                fix: "move this from buildInputs to nativeBuildInputs".to_string(),
+                type_of_fix: Move,
+                line: 6,
+                column: 17,
+                end_column: 22,
+                byte_range: 139..144,
+                list_byte_range: 94..160,
+                query: AQuery {
+                    name: "build time tool in buildInputs".to_string(),
+                    solution: "move this from buildInputs to nativeBuildInputs".to_string(),
+                    what: "cmake|makeWrapper|pkg-config|intltool|autoreconfHook".to_string(),
+                    in_what: "buildInputs".to_string(),
+                    type_of_query: List,
+                    type_of_fix: Move,
+                },
+            }),
+        ];
+
+        assert_eq!(result, expected)
+    }
 }

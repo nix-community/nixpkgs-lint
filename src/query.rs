@@ -5,7 +5,7 @@ fn pred(s: &str) -> predicates::str::RegexPredicate {
     predicate::str::is_match(format!("^({s})$")).unwrap()
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub enum QueryType {
     List,
     BindingAStringInsteadOfList,
@@ -13,7 +13,7 @@ pub enum QueryType {
     XInFormals,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub enum TypeOfFix {
     Remove,
     Move,
@@ -21,7 +21,7 @@ pub enum TypeOfFix {
     ConvertToList,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub struct AQuery {
     pub name: String,
     pub solution: String,
@@ -81,7 +81,7 @@ impl AQuery {
     }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AMatch {
     pub file: String,

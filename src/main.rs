@@ -1,4 +1,4 @@
-use std::{env::current_dir, path::PathBuf, process::ExitCode};
+use std::{env::current_dir, fs::read_to_string, path::PathBuf, process::ExitCode};
 
 use clap::{crate_version, Parser};
 use display::{print_matches, DisplayFormats};
@@ -42,12 +42,14 @@ fn main() -> ExitCode {
             pb = ProgressBar::new(length);
         }
 
-        match_vec.par_extend(
-            entries
-                .into_par_iter()
-                .progress_with(pb)
-                .flat_map(|entry| find_lints(&entry, &queries, &args.node_debug)),
-        );
+        match_vec.par_extend(entries.into_par_iter().progress_with(pb).flat_map(|entry| {
+            find_lints(
+                &entry,
+                read_to_string(&entry).unwrap().trim(),
+                &queries,
+                &args.node_debug,
+            )
+        }));
     }
 
     if !match_vec.is_empty() {
