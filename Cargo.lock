@@ -587,7 +587,8 @@ dependencies = [
 [[package]]
 name = "tree-sitter-nix"
 version = "0.0.1"
-source = "git+https://github.com/cstrahan/tree-sitter-nix#02878b40ac77d2889833519c6b6e9e63cfc690e6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae8c93b7dd2afcd9667daae048135be9ee268e9e3900f4d7d0556a63ec5336b1"
 dependencies = [
  "cc",
  "tree-sitter",
