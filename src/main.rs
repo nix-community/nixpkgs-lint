@@ -43,6 +43,7 @@ fn main() -> ExitCode {
         }
 
         match_vec.par_extend(entries.into_par_iter().progress_with(pb).flat_map(|entry| {
+            // println!("{:?}", entry);
             find_lints(
                 &entry,
                 read_to_string(&entry).unwrap().trim(),
