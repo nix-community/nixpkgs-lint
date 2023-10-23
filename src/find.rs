@@ -24,9 +24,10 @@ pub fn find_nix_files(path: &PathBuf) -> Vec<String> {
         .filter_entry(|e| !is_hidden(e))
         .filter_map(|entry| entry.ok())
         .filter(is_nix_file)
+        .filter(|path| path.metadata().is_ok())
         // pkgs/test/nixpkgs-check-by-name/tests/symlink-invalid/pkgs/by-name/fo/foo/foo.nix
         // is a broken symlink.
-        .filter(|path| path.metadata().is_ok())
+        .filter(|path| !path.path_is_symlink())
         // 'pkgs/test/nixpkgs-check-by-name/tests/package-nix-dir/pkgs/by-name/fo/foo/package.nix'
         // is a directory.
         .filter(|path| (!path.metadata().unwrap().is_dir()))
