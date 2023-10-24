@@ -48,7 +48,7 @@ fn main() -> ExitCode {
 
             find_lints(
                 &entry,
-                &file_contents.trim(),
+                file_contents.trim(),
                 &queries,
                 &args.node_debug,
             )

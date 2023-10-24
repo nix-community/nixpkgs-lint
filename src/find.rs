@@ -22,7 +22,7 @@ pub fn find_nix_files(path: &PathBuf) -> Vec<String> {
     WalkDir::new(path)
         .into_iter()
         .filter_entry(|e| !is_hidden(e))
-        .filter_map(|entry| entry.ok())
+        .map_while(Result::ok)
         .filter(is_nix_file)
         .filter(|path| path.metadata().is_ok())
         // pkgs/test/nixpkgs-check-by-name/tests/symlink-invalid/pkgs/by-name/fo/foo/foo.nix
