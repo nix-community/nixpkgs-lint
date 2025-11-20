@@ -39,6 +39,17 @@ lazy_static! {
                 type_of_fix: TypeOfFix::Change,
             }),
         ),
+        (
+            "PnameInSrc",
+            (AQuery {
+                name: "pname or similar in src".to_string(),
+                solution: "replace pname or similar with in src with a string".to_string(),
+                what: r"pname".to_string(),
+                in_what: "src".to_string(),
+                type_of_query: QueryType::List,
+                type_of_fix: TypeOfFix::Change,
+            }),
+        )
     ]);
 
     pub static ref UNFINISHED_QUERIES: HashMap<&'static str, AQuery> = HashMap::from([
