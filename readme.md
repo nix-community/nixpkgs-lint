@@ -55,7 +55,7 @@ locks you into a specific parser (which may or may not have provided
 source information, parse all things correctly, etc.).
 
 Enter tree-sitter.  The [Nix grammar for
-tree-sitter](https://github.com/cstrahan/tree-sitter-nix) has been
+tree-sitter](https://github.com/nix-community/tree-sitter-nix) has been
 well-tested and tree-sitter having bindings in several languages gives
 you options in how to work with the resulting AST.  You also get
 things like a location-annotated AST and error recovery for free.
